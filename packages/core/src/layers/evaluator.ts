@@ -11,7 +11,7 @@ import type {
   CostEventRecord,
 } from '../types.js';
 import type { SessionCostTracker } from '../cost/tracker.js';
-import type { Logger } from '@valeris/shared';
+import type { Logger } from '@velaris/shared';
 
 /**
  * 评估器

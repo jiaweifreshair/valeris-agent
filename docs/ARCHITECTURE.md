@@ -1,18 +1,18 @@
-# Valeris-Agent 决策引擎架构（双模）
+# Velaris-Agent 决策引擎架构（双模）
 
 ## 1. 架构定位
 
-Valeris-Agent 的本体不是“多 Agent 平台”，而是“目标导向、多策略、带治理与评估闭环的决策引擎”。
+Velaris-Agent 的本体不是“多 Agent 平台”，而是“目标导向、多策略、带治理与评估闭环的决策引擎”。
 在个人场景中，它也可以作为“个人决策引擎”，同时建模“行为现实”和“理性优化”。
 
 它支持两种运行模式并可在一次任务内切换：
 
-- 自闭环模式（Local Closed-Loop）：由 Valeris-Agent 独立完成目标编译、策略选择、执行编排与评估。
-- 分工模式（Delegated）：由 Valeris-Agent 保持决策主权，将执行分工给 OpenClaw 与 Claude Code。
+- 自闭环模式（Local Closed-Loop）：由 Velaris-Agent 独立完成目标编译、策略选择、执行编排与评估。
+- 分工模式（Delegated）：由 Velaris-Agent 保持决策主权，将执行分工给 OpenClaw 与 Claude Code。
 
 分层职责固定如下：
 
-- Valeris-Agent：Policy Brain（决策脑）
+- Velaris-Agent：Policy Brain（决策脑）
 - OpenClaw：Control + Governance Runtime（任务控制与治理底座）
 - Claude Code：Code Expert Runtime（代码域专家执行器）
 
@@ -100,7 +100,7 @@ FinalScore = α * BehaviorFit + β * RationalUtility - γ * RiskPenalty
 
 职责：承接具体执行动作。
 
-- `self`：Valeris 本地执行能力
+- `self`：Velaris 本地执行能力
 - `openclaw`：任务控制面、审批、通知、跨会话追踪
 - `claude_code`：代码实现、重构、测试、仓库级操作
 

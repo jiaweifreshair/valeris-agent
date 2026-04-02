@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://valeris-agent.local/contracts/stop-conditions.schema.json",
-  "title": "Valeris Stop Conditions Contract",
-  "description": "Valeris 停止条件契约，定义停止画像与条件目录。",
+  "$id": "https://velaris-agent.local/contracts/stop-conditions.schema.json",
+  "title": "Velaris Stop Conditions Contract",
+  "description": "Velaris 停止条件契约，定义停止画像与条件目录。",
   "type": "object",
   "required": ["policyId", "profiles", "conditionsCatalog"],
   "properties": {

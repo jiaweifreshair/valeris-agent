@@ -1,5 +1,5 @@
 {
-  "policyId": "valeris-stop-conditions-v1",
+  "policyId": "velaris-stop-conditions-v1",
   "profiles": {
     "strict_approval": {
       "onMatch": "stop",

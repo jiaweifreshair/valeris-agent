@@ -3,29 +3,29 @@
  * 用于六层架构之间的解耦通信
  */
 
-import type { ValerisEvents } from '../types.js';
+import type { VelarisEvents } from '../types.js';
 
 /** 事件处理函数类型 */
 type EventHandler<T> = (data: T) => void;
 
 /**
  * 类型安全的事件总线
- * 所有事件类型在 ValerisEvents 接口中定义
+ * 所有事件类型在 VelarisEvents 接口中定义
  */
 export class EventBus {
   /** 事件监听器映射表 */
   private readonly listeners = new Map<string, Set<EventHandler<unknown>>>();
 
   /** 注册事件监听器 */
-  on<K extends keyof ValerisEvents>(event: K, handler: EventHandler<ValerisEvents[K]>): void {
+  on<K extends keyof VelarisEvents>(event: K, handler: EventHandler<VelarisEvents[K]>): void {
     const handlers = this.listeners.get(event as string) ?? new Set();
     handlers.add(handler as EventHandler<unknown>);
     this.listeners.set(event as string, handlers);
   }
 
   /** 注册一次性事件监听器 */
-  once<K extends keyof ValerisEvents>(event: K, handler: EventHandler<ValerisEvents[K]>): void {
-    const wrapper: EventHandler<ValerisEvents[K]> = (data) => {
+  once<K extends keyof VelarisEvents>(event: K, handler: EventHandler<VelarisEvents[K]>): void {
+    const wrapper: EventHandler<VelarisEvents[K]> = (data) => {
       this.off(event, wrapper);
       handler(data);
     };
@@ -33,7 +33,7 @@ export class EventBus {
   }
 
   /** 移除事件监听器 */
-  off<K extends keyof ValerisEvents>(event: K, handler: EventHandler<ValerisEvents[K]>): void {
+  off<K extends keyof VelarisEvents>(event: K, handler: EventHandler<VelarisEvents[K]>): void {
     const handlers = this.listeners.get(event as string);
     if (handlers) {
       handlers.delete(handler as EventHandler<unknown>);
@@ -44,7 +44,7 @@ export class EventBus {
   }
 
   /** 发射事件，通知所有监听器 */
-  emit<K extends keyof ValerisEvents>(event: K, data: ValerisEvents[K]): void {
+  emit<K extends keyof VelarisEvents>(event: K, data: VelarisEvents[K]): void {
     const handlers = this.listeners.get(event as string);
     if (handlers) {
       for (const handler of handlers) {
@@ -63,7 +63,7 @@ export class EventBus {
   }
 
   /** 获取指定事件的监听器数量 */
-  listenerCount(event: keyof ValerisEvents): number {
+  listenerCount(event: keyof VelarisEvents): number {
     return this.listeners.get(event as string)?.size ?? 0;
   }
 }

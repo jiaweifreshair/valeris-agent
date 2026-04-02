@@ -1,10 +1,10 @@
 /**
- * Valeris Agent 错误类型定义
+ * Velaris Agent 错误类型定义
  * 所有框架内部错误的基类和分类
  */
 
 /** 框架错误基类 */
-export class ValerisError extends Error {
+export class VelarisError extends Error {
   /** 错误代码，用于程序化错误处理 */
   readonly code: string;
   /** 产生错误的层级 */
@@ -18,7 +18,7 @@ export class ValerisError extends Error {
     options?: { layer?: string; sessionId?: string; cause?: unknown },
   ) {
     super(message, { cause: options?.cause });
-    this.name = 'ValerisError';
+    this.name = 'VelarisError';
     this.code = code;
     this.layer = options?.layer;
     this.sessionId = options?.sessionId;
@@ -26,7 +26,7 @@ export class ValerisError extends Error {
 }
 
 /** 目标解析失败 */
-export class GoalParseError extends ValerisError {
+export class GoalParseError extends VelarisError {
   constructor(message: string, options?: { sessionId?: string; cause?: unknown }) {
     super(message, 'GOAL_PARSE_ERROR', { layer: 'goal-parser', ...options });
     this.name = 'GoalParseError';
@@ -34,7 +34,7 @@ export class GoalParseError extends ValerisError {
 }
 
 /** 决策失败（无候选方案或全部被过滤） */
-export class DecisionError extends ValerisError {
+export class DecisionError extends VelarisError {
   constructor(message: string, options?: { sessionId?: string; cause?: unknown }) {
     super(message, 'DECISION_ERROR', { layer: 'decision-core', ...options });
     this.name = 'DecisionError';
@@ -42,7 +42,7 @@ export class DecisionError extends ValerisError {
 }
 
 /** 预算超限 */
-export class BudgetExceededError extends ValerisError {
+export class BudgetExceededError extends VelarisError {
   /** 已使用的 token 数 */
   readonly tokensUsed: number;
   /** 已花费的 USD */
@@ -62,7 +62,7 @@ export class BudgetExceededError extends ValerisError {
 }
 
 /** Skill 执行失败 */
-export class SkillExecutionError extends ValerisError {
+export class SkillExecutionError extends VelarisError {
   /** 失败的 Skill 名称 */
   readonly skillName: string;
 
@@ -78,7 +78,7 @@ export class SkillExecutionError extends ValerisError {
 }
 
 /** Skill 未找到 */
-export class SkillNotFoundError extends ValerisError {
+export class SkillNotFoundError extends VelarisError {
   constructor(skillName: string) {
     super(`Skill not found: ${skillName}`, 'SKILL_NOT_FOUND', { layer: 'planner' });
     this.name = 'SkillNotFoundError';
@@ -86,7 +86,7 @@ export class SkillNotFoundError extends ValerisError {
 }
 
 /** LLM 调用失败 */
-export class LLMError extends ValerisError {
+export class LLMError extends VelarisError {
   constructor(message: string, options?: { sessionId?: string; cause?: unknown }) {
     super(message, 'LLM_ERROR', { layer: 'executor', ...options });
     this.name = 'LLMError';
@@ -94,7 +94,7 @@ export class LLMError extends ValerisError {
 }
 
 /** 存储操作失败 */
-export class StorageError extends ValerisError {
+export class StorageError extends VelarisError {
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, 'STORAGE_ERROR', { ...options });
     this.name = 'StorageError';

@@ -1,17 +1,17 @@
 /**
- * @valeris/core - Valeris Agent AI Decision Runtime
+ * @velaris/core - Velaris Agent AI Decision Runtime
  *
  * 主入口文件，导出核心 API
  */
 
 import type { AgentConfig } from './types.js';
-import { ValerisAgent } from './agent.js';
+import { VelarisAgent } from './agent.js';
 
 // ─── 核心工厂函数 ──────────────────────────────
 
 /**
- * 创建 Valeris Agent 实例
- * 这是使用 Valeris Agent 的唯一入口
+ * 创建 Velaris Agent 实例
+ * 这是使用 Velaris Agent 的唯一入口
  *
  * @example
  * ```typescript
@@ -28,8 +28,8 @@ import { ValerisAgent } from './agent.js';
  * const result = await session.run('optimize my token cost');
  * ```
  */
-export function createAgent(config: AgentConfig): ValerisAgent {
-  return new ValerisAgent(config);
+export function createAgent(config: AgentConfig): VelarisAgent {
+  return new VelarisAgent(config);
 }
 
 // ─── 类型导出 ───────────────────────────────────
@@ -74,14 +74,14 @@ export type {
   CostTracker,
 
   // 事件
-  ValerisEvents,
+  VelarisEvents,
 } from './types.js';
 
 export { GoalSchema } from './types.js';
 
 // ─── 类导出 ─────────────────────────────────────
 
-export { ValerisAgent, ValerisSession } from './agent.js';
+export { VelarisAgent, VelarisSession } from './agent.js';
 
 // 层级
 export { GoalParser } from './layers/goal-parser.js';

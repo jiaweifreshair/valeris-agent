@@ -1,5 +1,5 @@
 /**
- * Valeris Agent 通用工具函数
+ * Velaris Agent 通用工具函数
  */
 
 /** 生成带前缀的唯一 ID */

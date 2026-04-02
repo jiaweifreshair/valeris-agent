@@ -1,6 +1,6 @@
 /**
  * Adapter 层导出
- * 通过 @valeris/core/adapters 路径访问
+ * 通过 @velaris/core/adapters 路径访问
  */
 
 export type { StorageAdapter, SessionRecord, DecisionRecord, EvaluationRecord, CostEventRecord } from './storage.js';

@@ -1,7 +1,7 @@
 {
-  "name": "@valeris/shared",
+  "name": "@velaris/shared",
   "version": "0.1.0",
-  "description": "Valeris Agent Engine - Shared Utilities",
+  "description": "Velaris Agent Engine - Shared Utilities",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

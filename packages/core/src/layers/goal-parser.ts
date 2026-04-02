@@ -5,8 +5,8 @@
 
 import type { Goal, LLMAdapter } from '../types.js';
 import { GoalSchema } from '../types.js';
-import { GoalParseError } from '@valeris/shared';
-import type { Logger } from '@valeris/shared';
+import { GoalParseError } from '@velaris/shared';
+import type { Logger } from '@velaris/shared';
 
 /** 意图分类结果 */
 export interface IntentClassification {

@@ -1,5 +1,5 @@
 /**
- * ValerisAgent - 六层编排主体
+ * VelarisAgent - 六层编排主体
  * 串联 L0-L5 层，提供统一的 Session API
  */
 
@@ -22,7 +22,7 @@ import { EventBus } from './network/event-bus.js';
 import { SkillRegistry } from './skills/registry.js';
 import { SessionCostTracker } from './cost/tracker.js';
 import { BudgetManager } from './cost/budget.js';
-import { createLogger, generateId } from '@valeris/shared';
+import { createLogger, generateId } from '@velaris/shared';
 
 // 内置 Skill
 import { callLlmSkill } from './skills/builtins/call-llm.js';
@@ -31,10 +31,10 @@ import { compressContextSkill } from './skills/builtins/compress-context.js';
 import { fetchDataSkill } from './skills/builtins/fetch-data.js';
 
 /**
- * ValerisAgent 会话
+ * VelarisAgent 会话
  * 每次 createSession 创建一个独立会话，包含独立的成本追踪
  */
-export class ValerisSession {
+export class VelarisSession {
   readonly sessionId: string;
   private readonly costTracker: SessionCostTracker;
   private readonly goalParser: GoalParser;
@@ -217,10 +217,10 @@ export class ValerisSession {
 }
 
 /**
- * ValerisAgent 主类
+ * VelarisAgent 主类
  * 管理配置、Skill 注册、会话创建
  */
-export class ValerisAgent {
+export class VelarisAgent {
   private readonly config: AgentConfig;
   private readonly registry: SkillRegistry;
   private readonly network: AgentNetwork;
@@ -245,8 +245,8 @@ export class ValerisAgent {
   }
 
   /** 创建新会话 */
-  createSession(userId: string): ValerisSession {
-    return new ValerisSession(userId, this.config, this.network, this.registry, this.eventBus);
+  createSession(userId: string): VelarisSession {
+    return new VelarisSession(userId, this.config, this.network, this.registry, this.eventBus);
   }
 
   /** 获取事件总线（用于监听框架事件） */

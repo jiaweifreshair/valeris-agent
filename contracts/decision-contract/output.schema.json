@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://valeris-agent.local/contracts/decision-output.schema.json",
-  "title": "Valeris Decision Output Contract",
-  "description": "Valeris 决策引擎输出契约，描述路由结果、执行计划与停止策略。",
+  "$id": "https://velaris-agent.local/contracts/decision-output.schema.json",
+  "title": "Velaris Decision Output Contract",
+  "description": "Velaris 决策引擎输出契约，描述路由结果、执行计划与停止策略。",
   "type": "object",
   "required": [
     "requestId",

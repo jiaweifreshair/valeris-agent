@@ -1,5 +1,5 @@
 /**
- * Valeris Agent 结构化日志
+ * Velaris Agent 结构化日志
  * JSON 格式输出，支持层级标注和会话追踪
  */
 

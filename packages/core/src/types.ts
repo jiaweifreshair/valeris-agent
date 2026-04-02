@@ -1,5 +1,5 @@
 /**
- * Valeris Agent 核心类型定义
+ * Velaris Agent 核心类型定义
  * 所有 Zod Schema + TypeScript 接口
  */
 
@@ -120,7 +120,7 @@ export interface ExecutionContext {
   /** 成本追踪器 */
   costTracker: CostTracker;
   /** 日志器 */
-  logger: import('@valeris/shared').Logger;
+  logger: import('@velaris/shared').Logger;
   /** 前序步骤的输出数据 */
   previousOutputs: Record<string, unknown>;
 }
@@ -394,7 +394,7 @@ export interface AgentConfig {
 // ─── Event 类型 ─────────────────────────────────────
 
 /** 框架事件类型定义 */
-export interface ValerisEvents {
+export interface VelarisEvents {
   'session:created': { sessionId: string; userId: string };
   'session:completed': { sessionId: string };
   'goal:parsed': { sessionId: string; goal: Goal };

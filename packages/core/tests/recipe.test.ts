@@ -10,7 +10,7 @@ import { scoreOptionsSkill } from '../src/skills/builtins/score-options.js';
 import { defineSkill } from '../src/skills/skill.js';
 import { z } from 'zod';
 import type { ExecutionContext, RecipeDefinition } from '../src/types.js';
-import { createLogger } from '@valeris/shared';
+import { createLogger } from '@velaris/shared';
 
 /** 创建测试用 ExecutionContext */
 function makeCtx(): ExecutionContext {

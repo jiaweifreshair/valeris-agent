@@ -4,7 +4,7 @@
  */
 
 import type { BudgetConfig, CostTracker } from '../types.js';
-import { BudgetExceededError } from '@valeris/shared';
+import { BudgetExceededError } from '@velaris/shared';
 
 /** 预算检查结果 */
 export interface BudgetCheckResult {

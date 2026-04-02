@@ -1,8 +1,8 @@
 {
-  "name": "valeris-agent",
+  "name": "velaris-agent",
   "version": "0.1.0",
   "private": true,
-  "description": "Valeris Agent - AI Decision Runtime Framework",
+  "description": "Velaris Agent - AI Decision Runtime Framework",
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",

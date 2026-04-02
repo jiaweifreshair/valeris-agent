@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { GoalParser } from '../src/layers/goal-parser.js';
 import type { LLMAdapter } from '../src/types.js';
-import { createLogger } from '@valeris/shared';
+import { createLogger } from '@velaris/shared';
 
 const logger = createLogger({ level: 'error' });
 

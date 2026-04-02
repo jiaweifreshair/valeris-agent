@@ -1,7 +1,7 @@
 /**
  * L3 Decision Core - 决策核心层 *
  * 多维加权打分、约束过滤、模型路由决策
- * 这是 Valeris Agent 的核心壁垒模块
+ * 这是 Velaris Agent 的核心壁垒模块
  */
 
 import type {
@@ -12,8 +12,8 @@ import type {
   ModelRoute,
   CostEstimate,
 } from '../types.js';
-import { DecisionError } from '@valeris/shared';
-import type { Logger } from '@valeris/shared';
+import { DecisionError } from '@velaris/shared';
+import type { Logger } from '@velaris/shared';
 
 /** 候选方案（Decision Core 输入） */
 export interface Candidate {

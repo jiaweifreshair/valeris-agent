@@ -4,7 +4,7 @@
  */
 
 import type { LLMAdapter, LLMChatRequest, LLMChatResponse } from '../types.js';
-import { LLMError } from '@valeris/shared';
+import { LLMError } from '@velaris/shared';
 
 /** OpenAI LLM 配置 */
 export interface OpenAILLMConfig {

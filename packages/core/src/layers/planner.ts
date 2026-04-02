@@ -11,8 +11,8 @@ import type {
   CostEstimate,
 } from '../types.js';
 import { SkillRegistry } from '../skills/registry.js';
-import { generateId } from '@valeris/shared';
-import type { Logger } from '@valeris/shared';
+import { generateId } from '@velaris/shared';
+import type { Logger } from '@velaris/shared';
 
 /**
  * 规划器

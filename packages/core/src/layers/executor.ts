@@ -14,7 +14,7 @@ import type {
 import { SkillRegistry } from '../skills/registry.js';
 import { RecipeExecutor } from '../skills/recipe.js';
 import { BudgetManager } from '../cost/budget.js';
-import type { Logger } from '@valeris/shared';
+import type { Logger } from '@velaris/shared';
 
 /**
  * 执行器

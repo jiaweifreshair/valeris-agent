@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://valeris-agent.local/contracts/decision-input.schema.json",
-  "title": "Valeris Decision Input Contract",
-  "description": "Valeris 决策引擎输入契约，定义路由与策略选择所需上下文。",
+  "$id": "https://velaris-agent.local/contracts/decision-input.schema.json",
+  "title": "Velaris Decision Input Contract",
+  "description": "Velaris 决策引擎输入契约，定义路由与策略选择所需上下文。",
   "type": "object",
   "required": [
     "requestId",

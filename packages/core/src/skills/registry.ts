@@ -4,7 +4,7 @@
  */
 
 import type { SkillDefinition } from '../types.js';
-import { SkillNotFoundError } from '@valeris/shared';
+import { SkillNotFoundError } from '@velaris/shared';
 
 /**
  * Skill 注册表

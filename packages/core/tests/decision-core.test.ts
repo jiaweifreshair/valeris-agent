@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { DecisionCore } from '../src/layers/decision-core.js';
 import type { Candidate } from '../src/layers/decision-core.js';
 import type { Goal } from '../src/types.js';
-import { createLogger } from '@valeris/shared';
+import { createLogger } from '@velaris/shared';
 
 const logger = createLogger({ level: 'error' });
 

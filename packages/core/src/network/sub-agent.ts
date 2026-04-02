@@ -4,7 +4,7 @@
  */
 
 import type { ExecutionContext, CostEstimate } from '../types.js';
-import { generateId } from '@valeris/shared';
+import { generateId } from '@velaris/shared';
 
 /** SubAgent 任务定义 */
 export interface SubAgentTask {

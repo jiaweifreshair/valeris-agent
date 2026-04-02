@@ -1,7 +1,7 @@
 {
-  "name": "@valeris/core",
+  "name": "@velaris/core",
   "version": "0.1.0",
-  "description": "Valeris Agent Engine - AI Decision Runtime Core",
+  "description": "Velaris Agent Engine - AI Decision Runtime Core",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "zod": "^3.24.0",
-    "@valeris/shared": "workspace:*"
+    "@velaris/shared": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

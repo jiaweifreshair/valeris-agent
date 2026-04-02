@@ -1,9 +1,9 @@
 /**
- * @valeris/shared - Valeris Agent 共享工具包
+ * @velaris/shared - Velaris Agent 共享工具包
  */
 
 export {
-  ValerisError,
+  VelarisError,
   GoalParseError,
   DecisionError,
   BudgetExceededError,

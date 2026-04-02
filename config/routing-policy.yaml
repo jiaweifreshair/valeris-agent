@@ -1,6 +1,6 @@
 version: 1
-policy_id: valeris-dual-mode-routing-v1
-owner: valeris-agent
+policy_id: velaris-dual-mode-routing-v1
+owner: velaris-agent
 updated_at: "2026-04-02T00:00:00Z"
 
 # 规则表达式支持的操作符：eq/ne/gt/gte/lt/lte/in/not_in

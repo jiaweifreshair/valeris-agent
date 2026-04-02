@@ -23,7 +23,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@valeris/shared':
+      '@velaris/shared':
         specifier: workspace:*
         version: link:../shared
       zod:

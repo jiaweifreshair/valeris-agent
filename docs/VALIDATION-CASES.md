@@ -1,4 +1,4 @@
-# Valeris Agent - 验证场景文档
+# Velaris Agent - 验证场景文档
 
 > 两个验证 Case 的完整设计 | v0.1.0 | 2026-04-02
 
