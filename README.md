@@ -137,7 +137,7 @@ valeris-agent/
 - `flight-compare` 负责数据抓取、供应商接口和前端交互。
 - `valeris-agent` 负责决策编排、策略选择、预算控制与评估沉淀。
 
-### B. 结合 `TokenScope`（路径按你提供：`/Users/apus/Documents/UGit/TokenScope`）
+### B. 结合 `TokenScope`（路径按你提供：`/Users/apus/Documents/UGit/tokenscope`）
 
 TokenScope 可直接复用 `tokencost` 场景定义，形成“成本治理中枢”：
 
