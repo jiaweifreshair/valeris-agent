@@ -46,7 +46,7 @@ def test_orchestrator_executes_tokencost_flow_with_runtime_controls():
     assert len(orchestrator.outcome_store.list_by_session("session-token")) == 1
 
 
-def test_orchestrator_executes_openclaw_flow_with_strict_governance():
+def test_orchestrator_executes_robotclaw_flow_with_strict_governance():
     orchestrator = VelarisBizOrchestrator()
 
     result = orchestrator.execute(
@@ -73,13 +73,13 @@ def test_orchestrator_executes_openclaw_flow_with_strict_governance():
                 },
             ],
         },
-        session_id="session-openclaw",
+        session_id="session-robotclaw",
     )
 
-    assert result["plan"]["scenario"] == "openclaw"
-    assert result["routing"]["selected_strategy"] == "delegated_openclaw"
+    assert result["plan"]["scenario"] == "robotclaw"
+    assert result["routing"]["selected_strategy"] == "delegated_robotclaw"
     assert result["authority"]["approvals_required"] is True
     assert "audit" in result["authority"]["required_capabilities"]
     assert result["result"]["recommended"]["id"] == "dispatch-a"
     assert result["task"]["status"] == "completed"
-    assert result["outcome"]["reason_codes"][0] == "R001_high_risk_go_openclaw"
+    assert result["outcome"]["reason_codes"][0] == "R001_high_risk_go_robotclaw"

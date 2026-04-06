@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from openharness.tools.openclaw_dispatch_tool import OpenClawDispatchTool, OpenClawDispatchToolInput
+from openharness.tools.robotclaw_dispatch_tool import RobotClawDispatchTool, RobotClawDispatchToolInput
 from openharness.tools.tokencost_analyze_tool import TokenCostAnalyzeTool, TokenCostAnalyzeToolInput
 from openharness.tools.travel_recommend_tool import TravelRecommendTool, TravelRecommendToolInput
 from openharness.tools.base import ToolExecutionContext
@@ -81,9 +81,9 @@ async def test_tokencost_analyze_tool_returns_projection(tmp_path: Path):
 
 
 @pytest.mark.asyncio
-async def test_openclaw_dispatch_tool_applies_safety_gate(tmp_path: Path):
-    result = await OpenClawDispatchTool().execute(
-        OpenClawDispatchToolInput(
+async def test_robotclaw_dispatch_tool_applies_safety_gate(tmp_path: Path):
+    result = await RobotClawDispatchTool().execute(
+        RobotClawDispatchToolInput(
             max_budget_cny=200000,
             proposals=[
                 {
@@ -108,6 +108,6 @@ async def test_openclaw_dispatch_tool_applies_safety_gate(tmp_path: Path):
     )
 
     payload = json.loads(result.output)
-    assert payload["scenario"] == "openclaw"
+    assert payload["scenario"] == "robotclaw"
     assert payload["recommended"]["id"] == "dispatch-a"
     assert payload["contract_ready"] is True

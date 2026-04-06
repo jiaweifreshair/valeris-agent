@@ -27,7 +27,7 @@ from openharness.tools.lsp_tool import LspTool
 from openharness.tools.mcp_auth_tool import McpAuthTool
 from openharness.tools.mcp_tool import McpToolAdapter
 from openharness.tools.notebook_edit_tool import NotebookEditTool
-from openharness.tools.openclaw_dispatch_tool import OpenClawDispatchTool
+from openharness.tools.robotclaw_dispatch_tool import RobotClawDispatchTool as RobotClawDispatchTool  # compat alias
 from openharness.tools.read_mcp_resource_tool import ReadMcpResourceTool
 from openharness.tools.remote_trigger_tool import RemoteTriggerTool
 from openharness.tools.send_message_tool import SendMessageTool
@@ -61,7 +61,7 @@ def create_default_tool_registry(mcp_manager=None) -> ToolRegistry:
         BizRunScenarioTool(),
         TravelRecommendTool(),
         TokenCostAnalyzeTool(),
-        OpenClawDispatchTool(),
+        RobotClawDispatchTool(),
         FileReadTool(),
         FileWriteTool(),
         FileEditTool(),

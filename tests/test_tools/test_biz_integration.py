@@ -113,7 +113,7 @@ async def test_biz_tokencost_flow_across_registry(tmp_path: Path):
 
 
 @pytest.mark.asyncio
-async def test_biz_openclaw_flow_across_registry(tmp_path: Path):
+async def test_biz_robotclaw_flow_across_registry(tmp_path: Path):
     registry = create_default_tool_registry()
     context = ToolExecutionContext(cwd=tmp_path, metadata={"tool_registry": registry})
 
@@ -128,7 +128,7 @@ async def test_biz_openclaw_flow_across_registry(tmp_path: Path):
         context,
     )
     plan = json.loads(plan_result.output)
-    assert plan["scenario"] == "openclaw"
+    assert plan["scenario"] == "robotclaw"
     assert plan["governance"]["requires_audit"] is True
 
     run_result = await biz_run.execute(

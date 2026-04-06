@@ -54,9 +54,9 @@ strategies:
     required_capabilities:
       - read
       - reason
-  delegated_openclaw:
+  delegated_robotclaw:
     mode: delegated
-    runtime: openclaw
+    runtime: robotclaw
     autonomy: supervised
     max_parallel_workers: 4
     required_capabilities:
@@ -73,7 +73,7 @@ strategies:
       - read
       - write
       - exec
-  hybrid_openclaw_claudecode:
+  hybrid_robotclaw_claudecode:
     mode: hybrid
     runtime: mixed
     autonomy: supervised
@@ -85,7 +85,7 @@ strategies:
       - audit
 
 rules:
-  - id: R001_high_risk_go_openclaw
+  - id: R001_high_risk_go_robotclaw
     priority: 1000
     when:
       all:
@@ -93,7 +93,7 @@ rules:
           op: in
           value: [high, critical]
     route:
-      strategy: delegated_openclaw
+      strategy: delegated_robotclaw
       stop_profile: strict_approval
       reason: 高风险任务必须进入治理优先路径
 
@@ -112,7 +112,7 @@ rules:
       stop_profile: balanced
       reason: 代码改动密集任务由代码域专家执行
 
-  - id: R003_audit_required_go_openclaw
+  - id: R003_audit_required_go_robotclaw
     priority: 850
     when:
       all:
@@ -120,7 +120,7 @@ rules:
           op: eq
           value: true
     route:
-      strategy: delegated_openclaw
+      strategy: delegated_robotclaw
       stop_profile: strict_approval
       reason: 强审计任务优先走任务控制与审计链路
 
@@ -135,7 +135,7 @@ rules:
           op: eq
           value: true
     route:
-      strategy: hybrid_openclaw_claudecode
+      strategy: hybrid_robotclaw_claudecode
       stop_profile: strict_approval
       reason: 跨系统副作用 + 代码变更，采用治理+代码双运行时
 

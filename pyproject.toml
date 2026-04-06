@@ -5,8 +5,8 @@ build-backend = "hatchling.build"
 [project]
 name = "velaris-agent"
 version = "0.1.0"
-description = "Velaris Agent Python runtime, forked from OpenHarness for secondary development"
-license = "MIT"
+description = "Decision Intelligence Agent - Every decision makes the next one better"
+license = "Apache-2.0"
 requires-python = ">=3.10"
 authors = [
     { name = "Velaris contributors" },

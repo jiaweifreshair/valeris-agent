@@ -106,12 +106,12 @@ async def test_tokencost_plan_recommends_tokencost_tool_and_registry_executes(tm
 
 
 @pytest.mark.asyncio
-async def test_openclaw_plan_recommends_dispatch_tool_and_registry_executes(tmp_path: Path):
+async def test_robotclaw_plan_recommends_dispatch_tool_and_registry_executes(tmp_path: Path):
     registry = create_default_tool_registry()
     context = ToolExecutionContext(cwd=tmp_path, metadata={"tool_registry": registry})
 
     biz_plan = registry.get("biz_plan")
-    openclaw_tool = registry.get("openclaw_dispatch")
+    robotclaw_tool = registry.get("robotclaw_dispatch")
 
     plan_result = await biz_plan.execute(
         biz_plan.input_model(
@@ -121,10 +121,10 @@ async def test_openclaw_plan_recommends_dispatch_tool_and_registry_executes(tmp_
         context,
     )
     plan = json.loads(plan_result.output)
-    assert plan["recommended_tools"][1] == "openclaw_dispatch"
+    assert plan["recommended_tools"][1] == "robotclaw_dispatch"
 
-    run_result = await openclaw_tool.execute(
-        openclaw_tool.input_model(
+    run_result = await robotclaw_tool.execute(
+        robotclaw_tool.input_model(
             max_budget_cny=200000,
             proposals=[
                 {

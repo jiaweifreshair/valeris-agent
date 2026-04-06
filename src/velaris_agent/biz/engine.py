@@ -3,7 +3,7 @@
 实现三类共享能力：
 1. 业务场景识别与能力规划。
 2. 多维评分与排序。
-3. travel / tokencost / openclaw 三类场景执行。
+3. travel / tokencost / robotclaw 三类场景执行。
 """
 
 from __future__ import annotations
@@ -12,24 +12,36 @@ from typing import Any
 
 
 _SCENARIO_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "lifegoal": (
+        "lifegoal", "career", "job", "offer", "跳槽", "转行", "创业", "升学",
+        "投资", "买房", "理财", "保险", "健康", "运动", "留学", "考证",
+        "人生", "决策", "选择", "纠结", "该不该", "怎么选",
+    ),
     "travel": ("travel", "flight", "hotel", "trip", "商旅", "出差", "机票", "酒店"),
     "tokencost": ("tokencost", "token", "openai", "anthropic", "模型成本", "降本", "api 花费", "成本优化"),
-    "openclaw": ("openclaw", "dispatch", "robotaxi", "vehicle", "proposal", "派单", "运力", "合约", "车端"),
+    "robotclaw": ("robotclaw", "dispatch", "robotaxi", "vehicle", "proposal", "派单", "运力", "合约", "车端"),
 }
 
 _SCENARIO_CAPABILITIES: dict[str, list[str]] = {
+    "lifegoal": ["intent_parse", "option_discovery", "multi_dim_score", "recommendation", "memory_recall"],
     "travel": ["intent_parse", "inventory_search", "option_score", "itinerary_recommend"],
     "tokencost": ["usage_analyze", "model_compare", "saving_estimate", "optimization_recommend"],
-    "openclaw": ["intent_order", "vehicle_match", "proposal_score", "contract_form"],
+    "robotclaw": ["intent_order", "vehicle_match", "proposal_score", "contract_form"],
 }
 
 _SCENARIO_WEIGHTS: dict[str, dict[str, float]] = {
+    "lifegoal": {"growth": 0.25, "income": 0.25, "fulfillment": 0.20, "stability": 0.15, "balance": 0.15},
     "travel": {"price": 0.4, "time": 0.35, "comfort": 0.25},
     "tokencost": {"cost": 0.5, "quality": 0.35, "speed": 0.15},
-    "openclaw": {"safety": 0.4, "eta": 0.25, "cost": 0.2, "compliance": 0.15},
+    "robotclaw": {"safety": 0.4, "eta": 0.25, "cost": 0.2, "compliance": 0.15},
 }
 
 _SCENARIO_GOVERNANCE: dict[str, dict[str, Any]] = {
+    "lifegoal": {
+        "requires_audit": False,
+        "approval_mode": "default",
+        "stop_profile": "balanced",
+    },
     "travel": {
         "requires_audit": False,
         "approval_mode": "default",
@@ -40,7 +52,7 @@ _SCENARIO_GOVERNANCE: dict[str, dict[str, Any]] = {
         "approval_mode": "default",
         "stop_profile": "balanced",
     },
-    "openclaw": {
+    "robotclaw": {
         "requires_audit": True,
         "approval_mode": "strict",
         "stop_profile": "strict_approval",
@@ -48,9 +60,13 @@ _SCENARIO_GOVERNANCE: dict[str, dict[str, Any]] = {
 }
 
 _SCENARIO_RECOMMENDED_TOOLS: dict[str, list[str]] = {
+    "lifegoal": [
+        "lifegoal_decide", "recall_preferences", "recall_decisions",
+        "save_decision", "decision_score", "biz_execute",
+    ],
     "travel": ["biz_execute", "travel_recommend", "biz_plan", "biz_score"],
     "tokencost": ["biz_execute", "tokencost_analyze", "biz_plan", "biz_score"],
-    "openclaw": ["biz_execute", "openclaw_dispatch", "biz_plan", "biz_score"],
+    "robotclaw": ["biz_execute", "robotclaw_dispatch", "biz_plan", "biz_score"],
     "general": ["biz_execute", "biz_plan", "biz_score", "biz_run_scenario"],
 }
 
@@ -138,12 +154,14 @@ def score_options(options: list[dict[str, Any]], weights: dict[str, float]) -> l
 
 def run_scenario(scenario: str, payload: dict[str, Any]) -> dict[str, Any]:
     """运行一个业务场景。"""
+    if scenario == "lifegoal":
+        return _run_lifegoal_scenario(payload)
     if scenario == "travel":
         return _run_travel_scenario(payload)
     if scenario == "tokencost":
         return _run_tokencost_scenario(payload)
-    if scenario == "openclaw":
-        return _run_openclaw_scenario(payload)
+    if scenario == "robotclaw":
+        return _run_robotclaw_scenario(payload)
     raise ValueError(f"Unsupported biz scenario: {scenario}")
 
 
@@ -236,7 +254,7 @@ def _run_tokencost_scenario(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _run_openclaw_scenario(payload: dict[str, Any]) -> dict[str, Any]:
+def _run_robotclaw_scenario(payload: dict[str, Any]) -> dict[str, Any]:
     max_budget_cny = float(payload.get("max_budget_cny", 0) or 0)
     raw_proposals = payload.get("proposals", [])
     eligible = [
@@ -246,7 +264,7 @@ def _run_openclaw_scenario(payload: dict[str, Any]) -> dict[str, Any]:
     ]
     if not eligible:
         return {
-            "scenario": "openclaw",
+            "scenario": "robotclaw",
             "recommended": None,
             "contract_ready": False,
             "accepted_option_ids": [],
@@ -277,11 +295,11 @@ def _run_openclaw_scenario(payload: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
-    ranked = score_options(scored_input, _SCENARIO_WEIGHTS["openclaw"])
+    ranked = score_options(scored_input, _SCENARIO_WEIGHTS["robotclaw"])
     top_id = ranked[0]["id"]
     top_source = next(item for item in ranked_candidates if item.get("id", "") == top_id)
     return {
-        "scenario": "openclaw",
+        "scenario": "robotclaw",
         "recommended": ranked[0],
         "accepted_option_ids": [item.get("id", "") for item in ranked_candidates],
         "contract_ready": (
@@ -292,6 +310,55 @@ def _run_openclaw_scenario(payload: dict[str, Any]) -> dict[str, Any]:
             f"共评估 {len(eligible)} 个可用提案，"
             f"其中 {len(ranked_candidates)} 个通过安全与合规门槛。"
         ),
+    }
+
+
+def _run_lifegoal_scenario(payload: dict[str, Any]) -> dict[str, Any]:
+    """人生目标决策场景。"""
+    domain = str(payload.get("domain", "career"))
+    raw_options = payload.get("options", [])
+    risk_tolerance = str(payload.get("risk_tolerance", "moderate"))
+    constraints = payload.get("constraints", [])
+
+    if not raw_options:
+        return {
+            "scenario": "lifegoal",
+            "domain": domain,
+            "recommended": None,
+            "alternatives": [],
+            "summary": "没有提供候选选项, 请描述你面临的选择.",
+        }
+
+    # 获取领域权重
+    weights = dict(_SCENARIO_WEIGHTS.get("lifegoal", {"quality": 0.5, "cost": 0.3, "risk": 0.2}))
+
+    # 风险偏好调整
+    if risk_tolerance == "conservative":
+        if "stability" in weights:
+            weights["stability"] *= 1.3
+    elif risk_tolerance == "aggressive":
+        if "growth" in weights:
+            weights["growth"] *= 1.3
+
+    scored_input: list[dict[str, Any]] = []
+    for opt in raw_options:
+        dims = opt.get("dimensions", opt.get("scores", {}))
+        scored_input.append({
+            "id": opt.get("id", ""),
+            "label": opt.get("label", opt.get("id", "")),
+            "scores": {k: _clamp_score(float(v)) for k, v in dims.items()},
+        })
+
+    ranked = score_options(scored_input, weights)
+    return {
+        "scenario": "lifegoal",
+        "domain": domain,
+        "risk_tolerance": risk_tolerance,
+        "recommended": ranked[0] if ranked else None,
+        "alternatives": ranked[1:3] if len(ranked) > 1 else [],
+        "all_ranked": ranked,
+        "constraints": constraints,
+        "summary": f"在 {domain} 领域分析了 {len(ranked)} 个选项.",
     }
 
 

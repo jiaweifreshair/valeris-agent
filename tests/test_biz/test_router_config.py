@@ -24,7 +24,7 @@ def test_router_uses_yaml_policy_for_low_risk_tokencost():
     assert "R005_simple_local" in decision.reason_codes
 
 
-def test_router_uses_yaml_policy_for_audit_required_openclaw():
+def test_router_uses_yaml_policy_for_audit_required_robotclaw():
     router = PolicyRouter()
     plan = build_capability_plan(
         query="为 robotaxi 派单生成服务提案并形成交易合约",
@@ -33,11 +33,11 @@ def test_router_uses_yaml_policy_for_audit_required_openclaw():
 
     decision = router.route(plan=plan, query=plan["query"])
 
-    assert decision.selected_strategy == "delegated_openclaw"
-    assert decision.selected_route.runtime == "openclaw"
+    assert decision.selected_strategy == "delegated_robotclaw"
+    assert decision.selected_route.runtime == "robotclaw"
     assert decision.stop_profile == "strict_approval"
-    assert decision.trace["selected_rule"] == "R001_high_risk_go_openclaw"
-    assert "R001_high_risk_go_openclaw" in decision.reason_codes
+    assert decision.trace["selected_rule"] == "R001_high_risk_go_robotclaw"
+    assert "R001_high_risk_go_robotclaw" in decision.reason_codes
 
 
 def test_router_supports_explicit_policy_path_override(tmp_path: Path):
@@ -92,7 +92,7 @@ def test_router_supports_explicit_policy_path_override(tmp_path: Path):
     plan = build_capability_plan(
         query="任何任务都本地执行",
         constraints={"requires_audit": True},
-        scenario="openclaw",
+        scenario="robotclaw",
     )
 
     decision = router.route(plan=plan, query=plan["query"])

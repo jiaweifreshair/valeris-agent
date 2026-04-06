@@ -4,11 +4,11 @@ from datetime import datetime, timezone
 
 import pytest
 
-from velaris_agent.scenarios.openclaw.agents.user_agent import UserAgent
-from velaris_agent.scenarios.openclaw.agents.vehicle_agent import VehicleAgent, VehicleCapabilities
-from velaris_agent.scenarios.openclaw.dispatch.dispatcher import DispatchEngine, VehicleRegistry
-from velaris_agent.scenarios.openclaw.dispatch.scorer import ProposalScorer
-from velaris_agent.scenarios.openclaw.protocol.intent_order import (
+from velaris_agent.scenarios.robotclaw.agents.user_agent import UserAgent
+from velaris_agent.scenarios.robotclaw.agents.vehicle_agent import VehicleAgent, VehicleCapabilities
+from velaris_agent.scenarios.robotclaw.dispatch.dispatcher import DispatchEngine, VehicleRegistry
+from velaris_agent.scenarios.robotclaw.dispatch.scorer import ProposalScorer
+from velaris_agent.scenarios.robotclaw.protocol.intent_order import (
     Budget,
     IntentOrder,
     Location,
@@ -16,7 +16,7 @@ from velaris_agent.scenarios.openclaw.protocol.intent_order import (
     TimeRequirements,
     TripConstraints,
 )
-from velaris_agent.scenarios.openclaw.protocol.service_proposal import (
+from velaris_agent.scenarios.robotclaw.protocol.service_proposal import (
     AddOnService,
     CommitmentBoundaries,
     DriverProfile,
@@ -25,7 +25,7 @@ from velaris_agent.scenarios.openclaw.protocol.service_proposal import (
     ServiceProposal,
     VehicleProfile,
 )
-from velaris_agent.scenarios.openclaw.protocol.transaction_contract import ContractStatus
+from velaris_agent.scenarios.robotclaw.protocol.transaction_contract import ContractStatus
 
 
 def _now() -> datetime:
@@ -211,7 +211,7 @@ class TestUserAgent:
         assert order.order_id.startswith("ord-")
 
     def test_approve_contract(self) -> None:
-        from velaris_agent.scenarios.openclaw.protocol.transaction_contract import (
+        from velaris_agent.scenarios.robotclaw.protocol.transaction_contract import (
             PriceComposition,
             ProfitSharing,
             TransactionContract,
@@ -232,7 +232,7 @@ class TestUserAgent:
         assert signed.signatures.user_signed_at is not None
 
     def test_reject_contract(self) -> None:
-        from velaris_agent.scenarios.openclaw.protocol.transaction_contract import (
+        from velaris_agent.scenarios.robotclaw.protocol.transaction_contract import (
             PriceComposition,
             ProfitSharing,
             TransactionContract,

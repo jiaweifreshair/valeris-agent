@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from velaris_agent.scenarios.openclaw.protocol.intent_order import (
+from velaris_agent.scenarios.robotclaw.protocol.intent_order import (
     Budget,
     EnterpriseIdentity,
     IntentOrder,
@@ -15,7 +15,7 @@ from velaris_agent.scenarios.openclaw.protocol.intent_order import (
     TimeRequirements,
     TripConstraints,
 )
-from velaris_agent.scenarios.openclaw.protocol.service_proposal import (
+from velaris_agent.scenarios.robotclaw.protocol.service_proposal import (
     AddOnService,
     CommitmentBoundaries,
     DriverProfile,
@@ -24,7 +24,7 @@ from velaris_agent.scenarios.openclaw.protocol.service_proposal import (
     ServiceProposal,
     VehicleProfile,
 )
-from velaris_agent.scenarios.openclaw.protocol.transaction_contract import (
+from velaris_agent.scenarios.robotclaw.protocol.transaction_contract import (
     BreachClause,
     ContractStatus,
     DataPermissions,

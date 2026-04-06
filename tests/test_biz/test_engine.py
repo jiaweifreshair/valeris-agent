@@ -71,9 +71,9 @@ def test_run_tokencost_scenario_returns_projected_cost():
     assert result["recommendations"][0]["id"] == "switch-mini"
 
 
-def test_run_openclaw_scenario_prefers_safe_compliant_option():
+def test_run_robotclaw_scenario_prefers_safe_compliant_option():
     result = run_scenario(
-        scenario="openclaw",
+        scenario="robotclaw",
         payload={
             "max_budget_cny": 200000,
             "proposals": [
@@ -97,6 +97,6 @@ def test_run_openclaw_scenario_prefers_safe_compliant_option():
         },
     )
 
-    assert result["scenario"] == "openclaw"
+    assert result["scenario"] == "robotclaw"
     assert result["recommended"]["id"] == "proposal-a"
     assert result["contract_ready"] is True

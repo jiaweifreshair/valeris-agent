@@ -41,5 +41,5 @@ def test_router_prefers_explicit_cross_system_constraints_for_travel():
 
     decision = router.route(plan=plan, query=plan["query"])
 
-    assert decision.selected_strategy == "hybrid_openclaw_claudecode"
+    assert decision.selected_strategy == "hybrid_robotclaw_claudecode"
     assert decision.trace["selected_rule"] == "R004_cross_system_use_hybrid"

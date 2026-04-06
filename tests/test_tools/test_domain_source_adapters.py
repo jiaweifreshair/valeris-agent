@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from openharness.tools.base import ToolExecutionContext
-from openharness.tools.openclaw_dispatch_tool import OpenClawDispatchTool, OpenClawDispatchToolInput
+from openharness.tools.robotclaw_dispatch_tool import RobotClawDispatchTool, RobotClawDispatchToolInput
 from openharness.tools.tokencost_analyze_tool import TokenCostAnalyzeTool, TokenCostAnalyzeToolInput
 from openharness.tools.travel_recommend_tool import TravelRecommendTool, TravelRecommendToolInput
 
@@ -84,8 +84,8 @@ async def test_tokencost_tool_supports_file_source(tmp_path: Path):
 
 
 @pytest.mark.asyncio
-async def test_openclaw_tool_supports_file_source(tmp_path: Path):
-    source_path = tmp_path / "openclaw.json"
+async def test_robotclaw_tool_supports_file_source(tmp_path: Path):
+    source_path = tmp_path / "robotclaw.json"
     source_path.write_text(
         json.dumps(
             {
@@ -106,8 +106,8 @@ async def test_openclaw_tool_supports_file_source(tmp_path: Path):
         encoding="utf-8",
     )
 
-    result = await OpenClawDispatchTool().execute(
-        OpenClawDispatchToolInput(
+    result = await RobotClawDispatchTool().execute(
+        RobotClawDispatchToolInput(
             source={"type": "file", "path": str(source_path)},
         ),
         ToolExecutionContext(cwd=tmp_path),

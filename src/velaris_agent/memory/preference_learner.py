@@ -20,7 +20,7 @@ from velaris_agent.memory.types import DecisionRecord, UserPreferences
 DEFAULT_WEIGHTS: dict[str, dict[str, float]] = {
     "travel": {"price": 0.40, "time": 0.35, "comfort": 0.25},
     "tokencost": {"cost": 0.50, "quality": 0.35, "speed": 0.15},
-    "openclaw": {"safety": 0.40, "eta": 0.25, "cost": 0.20, "compliance": 0.15},
+    "robotclaw": {"safety": 0.40, "eta": 0.25, "cost": 0.20, "compliance": 0.15},
 }
 
 # 时间衰减半衰期 (天)

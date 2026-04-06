@@ -126,7 +126,7 @@ class PolicyRouter:
             constraints,
             "external_side_effects",
             ("capability_demand", "externalSideEffects"),
-            default=scenario == "openclaw",
+            default=scenario == "robotclaw",
         )
         requires_audit = self._constraint_bool(
             constraints,
@@ -196,7 +196,7 @@ class PolicyRouter:
     def _infer_task_complexity(self, scenario: str, write_code: bool, external_side_effects: bool, capability_count: int) -> str:
         if write_code or external_side_effects:
             return "complex"
-        if capability_count >= 4 and scenario == "openclaw":
+        if capability_count >= 4 and scenario == "robotclaw":
             return "complex"
         if scenario in {"travel", "tokencost"}:
             return "simple"
@@ -211,7 +211,7 @@ class PolicyRouter:
             return "low"
         if scenario == "travel":
             return "medium"
-        if scenario == "openclaw":
+        if scenario == "robotclaw":
             return "high"
         return "medium"
 
