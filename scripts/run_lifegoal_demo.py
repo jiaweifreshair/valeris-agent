@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 
 from velaris_agent.scenarios.lifegoal.demo import (
+    ALL_DOMAINS,
     render_lifegoal_demo_output,
     run_lifegoal_demo_sync,
     save_lifegoal_demo_output,
@@ -18,11 +19,13 @@ from velaris_agent.scenarios.lifegoal.demo import (
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """构造脚本参数解析器。
-
-    脚本参数与 CLI 子命令保持一致，避免两套入口的使用方式割裂。
-    """
+    """构造脚本参数解析器。"""
     parser = argparse.ArgumentParser(description="运行 Velaris 人生目标决策 demo")
+    parser.add_argument(
+        "--domain", "-d", type=str, default="career",
+        choices=ALL_DOMAINS,
+        help=f"决策领域 (默认: career), 可选: {', '.join(ALL_DOMAINS)}",
+    )
     parser.add_argument("--json", action="store_true", help="以 JSON 格式输出 demo 结果")
     parser.add_argument("--save-to", type=str, default=None, help="把 demo 结果保存到指定文件")
     return parser
@@ -31,7 +34,7 @@ def _build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     """运行人生目标决策 demo 并输出结果。"""
     args = _build_parser().parse_args()
-    payload = run_lifegoal_demo_sync()
+    payload = run_lifegoal_demo_sync(args.domain)
     if args.save_to:
         saved = save_lifegoal_demo_output(payload, args.save_to)
         print(f"Demo 结果已保存到: {saved}")

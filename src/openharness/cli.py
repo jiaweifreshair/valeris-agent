@@ -179,18 +179,29 @@ def auth_logout() -> None:
 
 @demo_app.command("lifegoal")
 def demo_lifegoal(
+    domain: str = typer.Option(
+        "career",
+        "--domain", "-d",
+        help="决策领域: career/finance/health/education/lifestyle/relationship",
+    ),
     json_output: bool = typer.Option(False, "--json", help="以 JSON 格式输出 Demo 结果"),
     save_to: str | None = typer.Option(None, "--save-to", help="把 Demo 结果保存到指定文件"),
 ) -> None:
-    """运行人生目标决策本地 Demo。"""
+    """运行人生目标决策本地 Demo (支持 6 个领域)。"""
     from velaris_agent.scenarios.lifegoal.demo import (
+        ALL_DOMAINS,
         render_lifegoal_demo_output,
         run_lifegoal_demo_sync,
         save_lifegoal_demo_output,
         serialize_lifegoal_demo_output,
     )
 
-    payload = run_lifegoal_demo_sync()
+    if domain not in ALL_DOMAINS:
+        print(f"不支持的领域: {domain}")
+        print(f"可选: {', '.join(ALL_DOMAINS)}")
+        raise typer.Exit(1)
+
+    payload = run_lifegoal_demo_sync(domain)
     if save_to:
         saved = save_lifegoal_demo_output(payload, save_to)
         print(f"Demo 结果已保存到: {saved}")

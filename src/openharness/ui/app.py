@@ -12,6 +12,32 @@ from openharness.ui.react_launcher import launch_react_tui
 from openharness.ui.runtime import build_runtime, close_runtime, handle_line, start_runtime
 
 
+_API_KEY_GUIDE = """\
+
+  Velaris 需要 API Key 才能启动交互会话。
+
+  配置方式 (任选其一):
+
+    1. 环境变量 (推荐):
+       export VELARIS_API_KEY="sk-ant-..."
+       # 或
+       export ANTHROPIC_API_KEY="sk-ant-..."
+
+    2. 配置文件:
+       echo '{"api_key": "sk-ant-..."}' > ~/.velaris-agent/settings.json
+
+  不需要 API Key 也可以运行本地 Demo:
+    velaris demo lifegoal
+    velaris demo lifegoal --json
+
+"""
+
+
+def _print_api_key_guide(exc: Exception) -> None:
+    """输出友好的 API Key 配置引导，替代原始 traceback。"""
+    print(_API_KEY_GUIDE, file=sys.stderr)
+
+
 async def run_repl(
     *,
     prompt: str | None = None,
@@ -25,24 +51,32 @@ async def run_repl(
 ) -> None:
     """Run the default OpenHarness interactive application (React TUI)."""
     if backend_only:
-        await run_backend_host(
+        try:
+            await run_backend_host(
+                cwd=cwd,
+                model=model,
+                base_url=base_url,
+                system_prompt=system_prompt,
+                api_key=api_key,
+                api_client=api_client,
+            )
+        except ValueError as exc:
+            _print_api_key_guide(exc)
+            raise SystemExit(1) from exc
+        return
+
+    try:
+        exit_code = await launch_react_tui(
+            prompt=prompt,
             cwd=cwd,
             model=model,
             base_url=base_url,
             system_prompt=system_prompt,
             api_key=api_key,
-            api_client=api_client,
         )
-        return
-
-    exit_code = await launch_react_tui(
-        prompt=prompt,
-        cwd=cwd,
-        model=model,
-        base_url=base_url,
-        system_prompt=system_prompt,
-        api_key=api_key,
-    )
+    except ValueError as exc:
+        _print_api_key_guide(exc)
+        raise SystemExit(1) from exc
     if exit_code != 0:
         raise SystemExit(exit_code)
 
@@ -75,16 +109,20 @@ async def run_print_mode(
     async def _noop_ask(question: str) -> str:
         return ""
 
-    bundle = await build_runtime(
-        prompt=prompt,
-        model=model,
-        base_url=base_url,
-        system_prompt=system_prompt,
-        api_key=api_key,
-        api_client=api_client,
-        permission_prompt=_noop_permission,
-        ask_user_prompt=_noop_ask,
-    )
+    try:
+        bundle = await build_runtime(
+            prompt=prompt,
+            model=model,
+            base_url=base_url,
+            system_prompt=system_prompt,
+            api_key=api_key,
+            api_client=api_client,
+            permission_prompt=_noop_permission,
+            ask_user_prompt=_noop_ask,
+        )
+    except ValueError as exc:
+        _print_api_key_guide(exc)
+        raise SystemExit(1) from exc
     await start_runtime(bundle)
 
     collected_text = ""
