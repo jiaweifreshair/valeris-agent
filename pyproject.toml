@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "velaris-agent-py"
+name = "velaris-agent"
 version = "0.1.0"
 description = "Velaris Agent Python runtime, forked from OpenHarness for secondary development"
 license = "MIT"

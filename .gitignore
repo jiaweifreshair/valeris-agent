@@ -1,11 +1,48 @@
-node_modules/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
 dist/
-.turbo/
-*.tsbuildinfo
+build/
+.venv/
+venv/
+*.whl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment
 .env
 .env.*
 !.env.example
+
+# OS
 .DS_Store
-coverage/
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Build artifacts
+*.tsbuildinfo
+.turbo/
+
+# Package managers
+node_modules/
+uv.lock
+
+# Data
 *.db
 *.db-journal
+
+# Logs
+*.log
