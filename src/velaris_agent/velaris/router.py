@@ -94,6 +94,14 @@ class PolicyRouter:
         )
 
     def _resolve_default_policy_path(self) -> Path:
+        """多策略查找 config/routing-policy.yaml: CWD 优先, __file__ 回退。"""
+        # 策略1: 从当前工作目录向上查找
+        cwd = Path.cwd().resolve()
+        for parent in [cwd, *cwd.parents]:
+            candidate = parent / "config" / "routing-policy.yaml"
+            if candidate.exists():
+                return candidate
+        # 策略2: 从 __file__ 所在目录向上查找 (原有逻辑, 作为回退)
         current = Path(__file__).resolve()
         for parent in current.parents:
             candidate = parent / "config" / "routing-policy.yaml"

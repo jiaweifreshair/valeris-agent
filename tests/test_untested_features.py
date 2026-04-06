@@ -22,19 +22,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-API_KEY = os.environ.get(
-    "ANTHROPIC_API_KEY",
-    "sk-Ue1kdhq9prvNwuwySlzRtWVD7ek0iJJaHyPdKDa3ecKLwYuG",
-)
+API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 BASE_URL = os.environ.get("ANTHROPIC_BASE_URL", "https://api.moonshot.cn/anthropic")
 MODEL = os.environ.get("ANTHROPIC_MODEL", "kimi-k2.5")
-_HARDCODED_WORKSPACE = Path("/home/tangjiabin/AutoAgent")
-# 如果硬编码路径存在则用它, 否则用临时目录
-if _HARDCODED_WORKSPACE.exists():
-    WORKSPACE = _HARDCODED_WORKSPACE
-else:
-    WORKSPACE = Path(tempfile.mkdtemp(prefix="velaris_test_"))
-_WORKSPACE_EXISTS = True  # 始终可用 (临时目录兜底)
+_HAS_API_KEY = bool(os.environ.get("ANTHROPIC_API_KEY"))
+WORKSPACE = Path(tempfile.mkdtemp(prefix="velaris_test_"))
 
 RESULTS: dict[str, bool] = {}
 
@@ -177,7 +169,7 @@ async def test_hooks_post_tool_use():
 # ====================================================================
 # 3. Hooks integrated into agent loop — hook blocks a dangerous command
 # ====================================================================
-@pytest.mark.skipif(not _WORKSPACE_EXISTS, reason="WORKSPACE path not available on this machine")
+@pytest.mark.skipif(not _HAS_API_KEY, reason="ANTHROPIC_API_KEY not set")
 async def test_hooks_in_agent_loop():
     """Hook that blocks 'rm' commands integrated into real agent loop."""
     from openharness.api.client import AnthropicApiClient
@@ -532,7 +524,7 @@ async def test_commands_registry():
 # ====================================================================
 # 10. Web fetch: real URL fetch in agent loop
 # ====================================================================
-@pytest.mark.skipif(not _WORKSPACE_EXISTS, reason="WORKSPACE path not available on this machine")
+@pytest.mark.skipif(not _HAS_API_KEY, reason="ANTHROPIC_API_KEY not set")
 async def test_web_fetch_real():
     """Agent fetches a real URL and summarizes it."""
     from openharness.tools.web_fetch_tool import WebFetchTool
@@ -637,7 +629,7 @@ async def test_config_paths():
 # ====================================================================
 # 14. Combined: hooks + skills + agent loop on AutoAgent
 # ====================================================================
-@pytest.mark.skipif(not _WORKSPACE_EXISTS, reason="WORKSPACE path not available on this machine")
+@pytest.mark.skipif(not _HAS_API_KEY, reason="ANTHROPIC_API_KEY not set")
 async def test_combined_hooks_skills_agent():
     """Combined test: load skills, register hooks, run agent on AutoAgent."""
     from openharness.skills.registry import SkillRegistry
@@ -707,7 +699,7 @@ async def test_combined_hooks_skills_agent():
 # ====================================================================
 # 15. Multi-agent + worktree + team: full swarm on AutoAgent
 # ====================================================================
-@pytest.mark.skipif(not _WORKSPACE_EXISTS, reason="WORKSPACE path not available on this machine")
+@pytest.mark.skipif(not _HAS_API_KEY, reason="ANTHROPIC_API_KEY not set")
 async def test_full_swarm_autoagent():
     """Spawn 2 in-process teammates working on AutoAgent with team management."""
     from openharness.swarm.in_process import start_in_process_teammate, TeammateAbortController
