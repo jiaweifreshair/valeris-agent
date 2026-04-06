@@ -125,7 +125,7 @@ rules:
       reason: 强审计任务优先走任务控制与审计链路
 
   - id: R004_cross_system_use_hybrid
-    priority: 800
+    priority: 950
     when:
       all:
         - field: capabilityDemand.externalSideEffects

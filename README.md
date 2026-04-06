@@ -1,232 +1,110 @@
-# Velaris Agent
+# Velaris Agent（OpenHarness 二开版）
 
-> 把每一次 AI 决策，沉淀成可复用、可审计、可持续优化的工程资产。
-> **定位：个人历史行为决策 + 理性多目标优化 + 治理审计 + 可委派 OpenClaw / Claude Code。**
+> 目标：基于 OpenHarness 打造可审计、可治理、可持续优化的多场景决策系统。
 
-Velaris Agent 是一个 **AI 决策运行时框架（Decision Runtime Framework）**。它不是又一个聊天壳子，而是把“目标解析 → 规划 → 决策 → 执行 → 评估”变成可编排、可追踪、可控成本的标准流水线。
+## 1. 项目定位
 
-如果你正在做多 Agent 协作、企业级 AI 工作流、或需要“成本与质量同时可控”的 AI 产品，这个仓库就是你的底层引擎。
+Velaris Agent 当前定位为 **决策中枢 + 治理编排层**，面向三个核心业务场景：
 
-## 核心能力
+1. 商旅 AI 助手：行程意图解析、多源比价、组合推荐。
+2. AI TokenCost：成本审计、模型替换建议、降本闭环。
+3. OpenClaw 车端运行环境：三段式派单协议与可审计调度。
 
-- 六层运行时架构（L0-L5）：事件总线、目标解析、规划编排、决策核心、执行引擎、评估反馈。
-- Skill + Recipe 双抽象：可注册原子能力（Skill），再通过 Recipe 组合为可复用业务流程。
-- 多维决策引擎：支持 `quality/cost/speed` 权重打分、过滤器、可扩展打分器。
-- 预算与成本闭环：会话级 token / USD 实时追踪、80% 预算预警、超限策略（`compress/downgrade/stop`）。
-- 子 Agent 网络：支持 `spawn + parallel` 并行任务协作。
-- OpenAI-compatible 适配：可直连 OpenAI 及兼容接口服务。
-- 全链路类型安全：TypeScript strict + Zod 输入输出校验。
+系统采用 **OpenHarness 能力模型** 做二次开发：
 
-## 六层架构一览
+- Engine：流式 Agent 循环与工具调用编排。
+- Tools/Skills：工具和技能体系。
+- Permissions/Hooks：权限和生命周期治理。
+- Swarm/Tasks/Coordinator：多 Agent 协作与后台任务。
+- Memory：跨会话记忆与策略回写。
 
-| 层级 | 模块 | 作用 |
+OpenHarness 上游仓库：`git@github.com:HKUDS/OpenHarness.git`
+
+## 2. 当前仓库状态
+
+本仓库保留 TypeScript 决策运行时实现，并已补齐 OpenHarness 风格的治理骨架：
+
+- 路由策略引擎：`PolicyRouter`
+- 权限签发：`AuthorityService`
+- 任务账本：`TaskLedger`
+- 结果沉淀：`OutcomeStore`
+- Python 运行时已补齐 `biz` 业务能力层与 `velaris` 路由治理闭环
+- Python 路由器已改为读取统一策略文件 `config/routing-policy.yaml`
+- `velaris_agent.*` 原生命名空间已开始承载新业务/治理实现，`openharness.*` 保留兼容导出
+
+对应代码位置：
+
+- `packages/core/src/policy/`
+- `packages/core/src/governance/`
+- `packages/core/src/control/`
+- `packages/core/src/eval/`
+- `velaris-agent-py/src/openharness/biz/`
+- `velaris-agent-py/src/openharness/velaris/`
+
+## 3. 架构分层
+
+| 层级 | 模块 | 核心职责 |
 |---|---|---|
-| L0 | EventBus / AgentNetwork | 事件解耦、子 Agent 编排 |
-| L1 | GoalParser | 自然语言 / 结构化 Goal 统一解析 |
-| L2 | Planner | Recipe 匹配与执行计划生成 |
-| L3 | DecisionCore | 约束过滤、多维打分、模型路由 |
-| L4 | Executor | Skill/Recipe 执行、预算管控、异常处理 |
-| L5 | Evaluator | 质量评分、成本分析、反馈沉淀 |
+| L0 | EventBus / AgentNetwork | 事件总线、子 Agent 编排 |
+| L1 | GoalParser | 自然语言与结构化目标统一解析 |
+| L2 | PolicyRouter / Planner | 策略路由与执行计划生成 |
+| L3 | DecisionCore | 多维打分、约束过滤、模型路由 |
+| L4 | AuthorityService / Executor | 最小权限签发与执行编排 |
+| L5 | Evaluator / OutcomeStore | 质量成本评估、策略反馈回写 |
+| Control | TaskLedger | 生命周期跟踪与审计回放 |
 
-详细验证场景见：`docs/VALIDATION-CASES.md`
+## 4. 核心契约与策略配置
 
-## 10 分钟上手
+- 路由策略：`config/routing-policy.yaml`
+- 决策输入契约：`contracts/decision-contract/input.schema.json`
+- 决策输出契约：`contracts/decision-contract/output.schema.json`
+- 停止条件契约：`contracts/decision-contract/stop-conditions.schema.json`
 
-### 1) 环境要求
+## 5. 开发与验证
+
+### 环境要求
 
 - Node.js >= 20
 - pnpm >= 10
 
-### 2) 安装依赖
+### 常用命令
 
 ```bash
 pnpm install
-```
-
-### 3) 构建 + 测试
-
-```bash
 pnpm build
-pnpm test
 pnpm typecheck
-```
-
-### 4) 最小可运行示例
-
-```ts
-import { z } from 'zod';
-import { createAgent, defineSkill, type RecipeDefinition } from '@velaris/core';
-import { MemoryStorage, OpenAILLM } from '@velaris/core/adapters';
-
-const analyzeUsageSkill = defineSkill({
-  name: 'analyze-usage',
-  description: '分析 API 用量与成本结构',
-  inputSchema: z.object({ raw: z.record(z.unknown()) }),
-  outputSchema: z.object({ totalCostUsd: z.number(), topModel: z.string() }),
-  async execute(input) {
-    return {
-      totalCostUsd: Number(input.raw.totalCostUsd ?? 0),
-      topModel: String(input.raw.topModel ?? 'gpt-4o-mini'),
-    };
-  },
-});
-
-const recipe: RecipeDefinition = {
-  name: 'token_optimize',
-  description: 'Token 成本优化流程',
-  steps: [{ skill: 'analyze-usage' }, { skill: 'score-options' }],
-};
-
-const agent = createAgent({
-  productId: 'tokencost',
-  skills: [analyzeUsageSkill],
-  recipes: [recipe],
-  decisionWeights: { quality: 0.35, cost: 0.5, speed: 0.15 },
-  storage: new MemoryStorage(),
-  llm: new OpenAILLM({ apiKey: process.env.OPENAI_API_KEY ?? '' }),
-  budget: {
-    maxTokensPerSession: 50_000,
-    maxCostPerSession: 0.1,
-    onBudgetExceeded: 'compress',
-  },
-});
-
-const session = agent.createSession('user_001');
-const result = await session.run('我每月 AI 花费过高，帮我给出降本方案');
-console.log(result.decision.reasoning);
-console.log(result.evaluation.costAnalysis);
-```
-
-## 项目结构
-
-```text
-velaris-agent/
-├── packages/
-│   ├── core/      # 决策运行时核心
-│   └── shared/    # 错误、日志、通用工具
-├── cases/
-│   ├── tokencost/     # Case 1: AI Token 成本优化
-│   └── flightcompare/ # Case 2: 包机询价比价
-├── docs/
-│   ├── ARCHITECTURE.md
-│   └── VALIDATION-CASES.md
-└── examples/
-```
-
-## 与验证项目结合方案
-
-下面是你提到的两个验证项目，与 Velaris 底层引擎的推荐接入方式。
-
-### A. 结合 `flight-compare`
-
-`flight-compare` 当前是 `FastAPI + agent-browser` 的旅行比价服务，Velaris 可以承担“判断层与编排层”：
-
-- 把用户查询（如“下周三上海飞三亚，预算 20 万”）转换为 `goalType=charter_quote`。
-- 用 Recipe 串联：`search-aircraft -> calc-reposition -> check-empty-legs -> score-options -> price-quote`。
-- 用 L3 决策核心统一处理 `价格/时效/合规` 权重评分。
-- 用 L4/L5 输出可解释推荐与成本归因，支持复盘。
-
-建议接口边界：
-
-- `flight-compare` 负责数据抓取、供应商接口和前端交互。
-- `velaris-agent` 负责决策编排、策略选择、预算控制与评估沉淀。
-
-### B. 结合 `TokenScope`
-
-TokenScope 可直接复用 `tokencost` 场景定义，形成“成本治理中枢”：
-
-- 目标统一为 `goalType=token_optimize`。
-- 关键 Skill：`analyze-usage`、`model-compare`、`optimize-suggest`。
-- 决策权重建议：`{ cost: 0.50, quality: 0.35, speed: 0.15 }`。
-- 预算建议：单次分析成本限制在 `< $0.10`，并默认开启超限压缩策略。
-
-这样可以把 TokenScope 从“账单展示”升级为“可执行降本系统”。
-
-## 与 OpenClaw / Claude Code 的联动亮点（对外话术）
-
-- 决策脑 + 双执行臂：Velaris 负责决策，OpenClaw 负责治理，Claude Code 负责代码落地。
-- 从目标到交付：一句目标可串联为任务计划、执行链路与可验证结果。
-- 对话外自治任务：支持后台持续运行、暂停、重试、取消与恢复。
-- 可审计 AI：每次策略命中、审批动作、执行结果都有追踪记录。
-- 自治等级可控：可在 `supervised/plan/auto` 间按风险动态切换。
-- 质量-成本-时延三目标平衡：不靠拍脑袋，靠策略规则和预算约束驱动。
-- 双模切换：低风险任务本地闭环，高风险任务委派 OpenClaw/Claude Code 分工处理。
-- 最小权限执行：能力按任务发放，超范围立即阻断并记录审计事件。
-- 失败可回放：支持用同一输入回放路由和停止条件，定位问题更快。
-- 不只是多 Agent：核心是“多策略决策引擎”，多 Agent 只是执行形态之一。
-
-## 个人决策引擎定位（行为现实 + 理性优化）
-
-Velaris 也可以被定义为“个人决策引擎”，用于持续回答两个问题：
-
-- 我大概率会怎么选（基于历史行为、偏好与风险承受能力）。
-- 在当前目标约束下我应该怎么选（基于多目标优化的理性解）。
-
-推荐采用三层结构：
-
-1. 行为轨（Descriptive）：从历史行为中学习真实偏好，预测默认选择。
-2. 理性轨（Normative）：在收益、成本、时间、风险等目标下计算最优策略。
-3. 仲裁层（Policy）：当两轨冲突时给出“默认建议 + 理性建议 + 偏离代价”。
-
-一个可执行的统一打分形式：
-
-```text
-FinalScore = α * BehaviorFit + β * RationalUtility - γ * RiskPenalty
-```
-
-其中 `α/β/γ` 可按场景动态调整：短期执行优先时提高 `α`，长期收益优先时提高 `β`，高风险场景提高 `γ`。
-
-## 写代码能解决什么
-
-1. 需求到 PR：把一句需求拆解为任务，产出实现、测试与变更说明。
-2. 批量重构：跨文件、跨模块执行重命名、接口迁移与技术债清理。
-3. Bug 修复闭环：定位根因、生成修复、补回归测试并验证通过。
-4. 测试补全：识别薄弱覆盖区域，补单测与集成测试。
-5. 依赖升级：评估兼容风险后分批升级并自动修复破坏性变更。
-6. 性能优化：在“收益/风险/改动量”约束下选择最优改造路径。
-7. 安全修复：高风险改动强制审批与审计，避免越权执行。
-8. 发布治理：根据策略自动判定发布、灰度或回滚动作。
-
-## 典型应用场景
-
-1. 需求到代码交付：把需求拆解为任务后交给 Claude Code 执行改造、测试与提交建议。
-2. 高风险发布治理：通过 OpenClaw 管理审批、审计与回滚检查点，降低发布风险。
-3. 生产故障处置：自动判断“先止血还是先定位根因”，并行拉起排障子任务。
-4. 成本治理与模型路由：在 TokenScope 场景中持续做降本建议与预算控制。
-5. 复杂比价与推荐：在 flight-compare 场景中做多源检索、冲突裁决与可解释推荐。
-6. 合规敏感任务执行：涉及外部写入或通知时，强制走权限令牌与审批链。
-7. 长任务后台编排：任务可脱离会话持续运行，支持状态追踪与人工接管。
-8. 多团队协同：策略层统一，执行层按研发/运营/风控职责分工。
-9. 策略 A/B 实验：同一目标跑不同策略，比较质量/成本/时延后迭代规则。
-10. 人机协同决策：证据冲突、预算耗尽或越权风险时自动升级人工检查点。
-
-## 推荐落地顺序（两周）
-
-1. 第 1-2 天：沉淀两个项目的统一 Goal 协议与 Recipe 协议。
-2. 第 3-5 天：先接 `flight-compare` 判断层，打通端到端推荐链路。
-3. 第 6-8 天：接入 TokenScope 成本分析链路，落地优化建议闭环。
-4. 第 9-10 天：打通评估数据回流，形成可量化仪表盘。
-5. 第 11-14 天：灰度上线 + 指标复盘（采纳率、成本下降、延迟、预算命中率）。
-
-## 开发命令
-
-```bash
-pnpm build
 pnpm test
-pnpm typecheck
-pnpm clean
 ```
 
-## 里程碑方向
+### 当前测试状态
 
-- 多模型路由策略增强（按任务类型与 SLA 动态路由）
-- 更细粒度预算治理（层级配额 / 任务配额）
-- 生产级存储适配器（PostgreSQL / Redis）
-- 决策可视化控制台（决策树 + 成本时间线 + 反馈回放）
+- `@velaris/core`：44 个测试全部通过（含新增路由治理测试）。
 
-## 结语
+## 6. Phase 化二开计划
 
-当你把 Agent 从“会说话”升级到“会做可审计决策”，产品的护城河才真正开始出现。
+### Phase 1（已完成）
 
-Velaris 的目标很明确：
-**让 AI 系统从 Demo 体质，进化为可规模化交付的工程系统。**
+1. 引入 OpenHarness 风格治理模型（路由/权限/账本/结果回写）。
+2. 契约化输入输出与停止条件。
+3. 补齐单元测试并通过 typecheck/test。
+
+### Phase 2（进行中）
+
+1. 已引入 `velaris-agent-py/`，迁入本地 OpenHarness Python 基线并完成首轮入口改造。
+2. 已接入 `biz_execute / biz_plan / biz_score / biz_run_scenario` 业务能力工具。
+3. 已补齐 `travel_recommend / tokencost_analyze / openclaw_dispatch` 三类领域工具入口。
+4. 三类领域工具已支持 `file/http` 数据源 adapter，并保留显式入参覆盖。
+5. 已落地商旅、TokenCost、OpenClaw 三类场景测试，并映射 Python 版路由、签权、账本、Outcome。
+
+### Phase 3（待执行）
+
+1. 打通路由策略到真实外部 runtime（OpenClaw/Claude Code）。
+2. 抽离 TS 为策略仿真与契约验证层。
+3. 建立统一 API 与观测面板（质量/成本/风险/审批命中率）。
+
+## 7. 文档索引
+
+- 技术总方案：`docs/TECHNICAL-PLAN.md`
+- 架构文档：`docs/ARCHITECTURE.md`
+- 场景验证：`docs/VALIDATION-CASES.md`
+- Python 迁移说明：`velaris-agent-py/docs/MIGRATION.md`

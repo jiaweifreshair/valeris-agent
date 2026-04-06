@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude Code Agent Runtime 架构</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --ink: #1c2330;
+      --muted: #687185;
+      --line: #d6ddec;
+      --cyan: #e4fbff;
+      --mint: #e7fbf2;
+      --violet: #efe9ff;
+      --amber: #fff3d8;
+      --indigo: #e8ebff;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 20% 0%, #fff, var(--bg));
+    }
+    .wrap {
+      max-width: 1540px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+    .sub {
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 14px;
+    }
+    .main-flow {
+      margin: 14px 0 16px;
+      border: 2px dashed var(--line);
+      border-radius: 12px;
+      padding: 10px 14px;
+      background: #fff;
+      font-weight: 600;
+      color: #36425a;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1.7fr 1.2fr;
+      gap: 14px;
+    }
+    .col {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+    .box {
+      background: var(--card);
+      border: 2px dashed var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 5px 16px rgba(55, 72, 112, 0.07);
+    }
+    .box h3 {
+      margin: 0 0 8px;
+      display: inline-block;
+      font-size: 14px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--cyan);
+      color: #116b7f;
+    }
+    .box ul {
+      margin: 4px 0 0;
+      padding-left: 18px;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .mint h3 { background: var(--mint); color: #0f6a49; }
+    .violet h3 { background: var(--violet); color: #4b3c9a; }
+    .amber h3 { background: var(--amber); color: #845700; }
+    .indigo h3 { background: var(--indigo); color: #2f4798; }
+
+    .row2 {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1.1fr 1.1fr 1fr 1fr;
+      gap: 14px;
+    }
+
+    .state {
+      margin-top: 14px;
+      border: 2px dashed #b7dfd6;
+      border-radius: 14px;
+      background: #f5fffd;
+      padding: 12px;
+    }
+    .state h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #116f61;
+    }
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .node {
+      border: 1px solid #bde8de;
+      border-radius: 10px;
+      padding: 7px;
+      background: #fff;
+      font-size: 12px;
+      min-height: 56px;
+    }
+    .tips {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    @media (max-width: 1280px) {
+      .grid, .row2 { grid-template-columns: 1fr; }
+      .state-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Claude Code Agent Runtime（重画）</h1>
+    <div class="sub">Excalidraw 风格 · Query Loop / Tool Runtime / 权限与上下文治理</div>
+
+    <div class="main-flow">入口形态 → Query Loop → Tool Runtime → 执行资源（Claude API / MCP / FS / Shell）</div>
+
+    <section class="grid">
+      <div class="col">
+        <div class="box mint">
+          <h3>入口形态</h3>
+          <ul>
+            <li>Interactive REPL</li>
+            <li>Headless / SDK</li>
+            <li>Remote / CCR</li>
+            <li>Bridge 工作节点</li>
+            <li>Server Mode</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="box">
+          <h3>Query Loop / 对话循环</h3>
+          <ul>
+            <li>QueryEngine.ts</li>
+            <li>query.ts 主循环（读取输入 + tool_use 检测 + 结果回灌）</li>
+            <li>System Prompt 组装</li>
+            <li>services/api/claude.ts</li>
+            <li>循环控制（max-output / stop-hook）</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="box violet">
+          <h3>Tool Runtime（40+ 工具）</h3>
+          <ul>
+            <li>tools.ts 注册中心</li>
+            <li>toolOrchestration.ts（并发安全）</li>
+            <li>toolExecution.ts（schema 校验）</li>
+            <li>Tools 统一协议</li>
+            <li>StreamingToolExecutor</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="box mint">
+          <h3>执行资源</h3>
+          <ul>
+            <li>Anthropic Claude API</li>
+            <li>MCP Server 进程</li>
+            <li>本地文件系统</li>
+            <li>Shell / 子进程</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="row2">
+      <div class="box amber">
+        <h3>权限决策（4 层）</h3>
+        <ul>
+          <li>PermissionMode（default / plan / auto / bypass）</li>
+          <li>Race 解析（User / Hook / Classifier / Bridge）</li>
+          <li>Bash Classifier + LLM 安全判断</li>
+          <li>allow / deny / ask 规则引擎</li>
+          <li>ResolveOnce 原子竞争，避免双重裁决</li>
+        </ul>
+      </div>
+
+      <div class="box mint">
+        <h3>上下文压缩（5 层）</h3>
+        <ul>
+          <li>snip_compact</li>
+          <li>microcompact</li>
+          <li>context collapse</li>
+          <li>折叠已完成子对话</li>
+          <li>autoCompact（reactive）</li>
+        </ul>
+      </div>
+
+      <div class="box indigo">
+        <h3>能力系统</h3>
+        <ul>
+          <li>Commands 80+</li>
+          <li>Skills 技能</li>
+          <li>Plugins 插件</li>
+          <li>MCP Client</li>
+        </ul>
+      </div>
+
+      <div class="box violet">
+        <h3>Agent / Task 子系统</h3>
+        <ul>
+          <li>AgentTool（子代理）</li>
+          <li>Task 统一壳</li>
+          <li>SendMessageTool</li>
+          <li>worktree / remote 隔离</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="state">
+      <h3>持久化状态层（.claude/*）</h3>
+      <div class="state-grid">
+        <div class="node"><strong>bootstrap/state.ts</strong><br/>进程级全局状态</div>
+        <div class="node"><strong>AppStateStore</strong><br/>运行时状态仓</div>
+        <div class="node"><strong>sessionStorage.ts</strong><br/>transcript JSONL</div>
+        <div class="node"><strong>history.ts</strong><br/>输入历史 / 项目级</div>
+        <div class="node"><strong>compact boundary</strong><br/>压缩点 / 摘要恢复</div>
+        <div class="node"><strong>fileHistory</strong><br/>文件变更快照</div>
+        <div class="node"><strong>memdir/MEMORY.md</strong><br/>记忆层</div>
+      </div>
+    </section>
+
+    <div class="tips">注：重画图保持了截图中的核心语义与主路径，细节节点按可读性做了分组化表达。</div>
+  </div>
+</body>
+</html>

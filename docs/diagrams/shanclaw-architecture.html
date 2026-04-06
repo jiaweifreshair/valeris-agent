@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShanClaw 智能体循环架构</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --ink: #202532;
+      --muted: #697083;
+      --line: #d8deea;
+      --mint: #e8fbf5;
+      --teal: #ddf6ff;
+      --violet: #f1ecff;
+      --amber: #fff4db;
+      --rose: #ffe8ef;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+      background: radial-gradient(circle at 10% 10%, #ffffff, var(--bg));
+      color: var(--ink);
+    }
+    .wrap {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: 0.2px;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .flowline {
+      margin: 10px 0 18px;
+      padding: 10px 14px;
+      border: 2px dashed var(--line);
+      border-radius: 12px;
+      background: #fff;
+      font-weight: 600;
+      color: #36425a;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 2fr 1.25fr 1.2fr 1fr;
+      gap: 14px;
+    }
+    .col {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+    .box {
+      background: var(--card);
+      border: 2px dashed var(--line);
+      border-radius: 14px;
+      padding: 12px 12px 10px;
+      box-shadow: 0 5px 16px rgba(55, 72, 112, 0.07);
+    }
+    .box h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--teal);
+      color: #125f79;
+    }
+    .box ul {
+      margin: 4px 0 0;
+      padding-left: 18px;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .box p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .mint h3 { background: var(--mint); color: #0d6a4d; }
+    .violet h3 { background: var(--violet); color: #4b3c9a; }
+    .amber h3 { background: var(--amber); color: #8b5a00; }
+    .rose h3 { background: var(--rose); color: #9a2c55; }
+    .big {
+      min-height: 180px;
+    }
+    .small { min-height: 110px; }
+    .chiprow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .chip {
+      border: 1px solid #cfd7e8;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px;
+      background: #fff;
+      color: #33405c;
+    }
+    .daemon {
+      margin-top: 16px;
+      border: 2px dashed #d8dcb2;
+      background: #fffef2;
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .daemon h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #7f6a11;
+    }
+    .daemon-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .mod {
+      border: 1px solid #ddd8b3;
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 12px;
+      min-height: 62px;
+    }
+    .legend {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    @media (max-width: 1200px) {
+      .grid { grid-template-columns: 1fr; }
+      .daemon-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>ShanClaw 智能体循环架构（重画）</h1>
+      <div class="sub">Excalidraw 风格 · 结构化重绘版</div>
+    </div>
+
+    <div class="flowline">输入入口 → 主循环（上下文观察 / LLM / 响应处理 / 工具三阶段）→ 工具与执行 → 外部运行时</div>
+
+    <section class="grid">
+      <div class="col">
+        <div class="box mint small">
+          <h3>输入入口</h3>
+          <ul>
+            <li>TUI 终端交互</li>
+            <li>CLI 命令行</li>
+            <li>Daemon 守护进程</li>
+            <li>Desktop 客户端</li>
+          </ul>
+        </div>
+
+        <div class="box amber small">
+          <h3>五重权限模型</h3>
+          <ul>
+            <li>硬拦截规则</li>
+            <li>Shell AST 分析</li>
+            <li>allow + 默认安全</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="box big">
+          <h3>主循环（Loop）</h3>
+          <ul>
+            <li>上下文观察：窗口摘要、意图提取</li>
+            <li>LLM 调用：模型路由、流式输出</li>
+            <li>响应处理：结构化结果、文本输出</li>
+            <li>工具三阶段：执行前检查 / 执行 / 执行后处理</li>
+            <li>循环判定：达到目标 / 达预算上限 / 人工中断</li>
+          </ul>
+        </div>
+
+        <div class="box mint small">
+          <h3>上下文窗口管理</h3>
+          <ul>
+            <li>窗口监控（85%+ 触发压缩）</li>
+            <li>PersistLearnings</li>
+            <li>GenerateSummary / ShapeHistory</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="box violet big">
+          <h3>工具与执行</h3>
+          <ul>
+            <li>MCP 工具（stdio / HTTP）</li>
+            <li>网关工具（Cloud 场景）</li>
+            <li>cloud_delegate</li>
+            <li>use_skill</li>
+            <li>file_read / bash / screenshot / browser</li>
+          </ul>
+        </div>
+
+        <div class="box violet small">
+          <h3>Cloud 委托流程</h3>
+          <ul>
+            <li>SubmitTaskStream</li>
+            <li>SSE 事件流</li>
+            <li>工作流类型（Research / Stream / Auto）</li>
+            <li>结果聚合</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="box mint big">
+          <h3>外部运行时</h3>
+          <ul>
+            <li>Anthropic Claude</li>
+            <li>OpenAI / Google</li>
+            <li>Shannon Cloud</li>
+            <li>MCP Server 进程</li>
+          </ul>
+          <div class="chiprow">
+            <span class="chip">三方模型</span>
+            <span class="chip">SSE</span>
+            <span class="chip">多模型编排</span>
+          </div>
+        </div>
+
+        <div class="box rose small">
+          <h3>Hooks 钩子</h3>
+          <ul>
+            <li>PreToolUse</li>
+            <li>PostToolUse</li>
+            <li>Session 生命周期（Start / Stop）</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="box amber big">
+          <h3>模式管理</h3>
+          <ul>
+            <li>TUI 模式</li>
+            <li>CLI 模式</li>
+            <li>Daemon 模式</li>
+            <li>自动审批开关</li>
+          </ul>
+          <p>统一模式入口，负责交互体验与安全策略切换。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="daemon">
+      <h3>Daemon 核心模块（生产主路径）</h3>
+      <div class="daemon-grid">
+        <div class="mod"><strong>HTTP Server</strong><br/>localhost API / REST 编排点</div>
+        <div class="mod"><strong>SessionCache</strong><br/>会话互斥与并发安全</div>
+        <div class="mod"><strong>RunAgent</strong><br/>请求驱动智能体 Loop</div>
+        <div class="mod"><strong>EventBus</strong><br/>SSE 推送与实时事件</div>
+        <div class="mod"><strong>ApprovalBroker</strong><br/>审批协调、超时处理</div>
+        <div class="mod"><strong>MCP Supervisor</strong><br/>健康探针与自动重连</div>
+        <div class="mod"><strong>Config 热重载</strong><br/>RWMutex 无中断切换</div>
+      </div>
+    </section>
+
+    <div class="legend">注：此图为重绘版，保留截图中的核心分层、主链路和治理边界，细粒度节点按语义合并。</div>
+  </div>
+</body>
+</html>

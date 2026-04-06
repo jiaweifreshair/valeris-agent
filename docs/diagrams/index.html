@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>架构重画索引</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f6f8fb;
+      color: #1d2430;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    p { color: #6a7387; margin: 0 0 18px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    a.card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      padding: 14px;
+      border: 2px dashed #d9deea;
+      border-radius: 14px;
+      background: #fff;
+    }
+    .title { font-size: 18px; font-weight: 700; margin-bottom: 5px; }
+    .desc { font-size: 13px; color: #6a7387; line-height: 1.6; }
+    .path {
+      margin-top: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: #2f467b;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>架构图重画索引</h1>
+    <p>根据截图重绘的 Excalidraw 风格 HTML 版本，可直接本地打开浏览或继续编辑。</p>
+
+    <section class="grid">
+      <a class="card" href="./shanclaw-architecture.html">
+        <div class="title">ShanClaw 智能体循环架构</div>
+        <div class="desc">输入入口、主循环、工具能力、外部运行时、治理安全、Cloud 委托、Daemon 核心模块。</div>
+        <div class="path">docs/diagrams/shanclaw-architecture.html</div>
+      </a>
+
+      <a class="card" href="./claude-code-runtime.html">
+        <div class="title">Claude Code Agent Runtime</div>
+        <div class="desc">Query Loop、Tool Runtime、权限系统、上下文压缩、能力系统、状态层、Agent/Task 子系统。</div>
+        <div class="path">docs/diagrams/claude-code-runtime.html</div>
+      </a>
+
+      <a class="card" href="./IMAGE-REDRAW.md">
+        <div class="title">Mermaid 文本版</div>
+        <div class="desc">便于代码评审和版本管理的 Mermaid 重画稿，含 Velaris 对齐建议。</div>
+        <div class="path">docs/diagrams/IMAGE-REDRAW.md</div>
+      </a>
+    </section>
+  </main>
+</body>
+</html>
