@@ -1,556 +1,397 @@
-<h1 align="center"><img src="assets/logo.png" alt="Velaris Agent" width="64" style="vertical-align: middle;">&nbsp; <code>vl</code> — Velaris Agent Python Runtime</h1>
+<h1 align="center">Velaris Agent</h1>
 
-> This directory vendors the upstream OpenHarness Python codebase and applies Velaris-specific migration changes.
-> Compatibility entrypoints `oh` and `openharness` are still retained during migration.
-
-**OpenHarness** delivers core lightweight agent infrastructure: tool-use, skills, memory, and multi-agent coordination.
-
-**Join the community**: contribute **Harness** for open agent development.
+<p align="center"><strong>Decision Intelligence Agent - 让每次决策都比上一次更好</strong></p>
 
 <p align="center">
   <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-5_min-blue?style=for-the-badge" alt="Quick Start"></a>
-  <a href="#-harness-architecture"><img src="https://img.shields.io/badge/Harness-Architecture-ff69b4?style=for-the-badge" alt="Architecture"></a>
-  <a href="#-features"><img src="https://img.shields.io/badge/Tools-43+-green?style=for-the-badge" alt="Tools"></a>
-  <a href="#-test-results"><img src="https://img.shields.io/badge/Tests-114_Passing-brightgreen?style=for-the-badge" alt="Tests"></a>
+  <a href="#-architecture"><img src="https://img.shields.io/badge/Architecture-3_Layers-ff69b4?style=for-the-badge" alt="Architecture"></a>
+  <a href="#-decision-tools"><img src="https://img.shields.io/badge/Decision_Tools-11-green?style=for-the-badge" alt="Tools"></a>
+  <a href="#-tests"><img src="https://img.shields.io/badge/Tests-373_Passing-brightgreen?style=for-the-badge" alt="Tests"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License"></a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-≥3.10-blue?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/React+Ink-TUI-61DAFB?logo=react&logoColor=white" alt="React">
-  <img src="https://img.shields.io/badge/pytest-114_pass-brightgreen" alt="Pytest">
+  <img src="https://img.shields.io/badge/python-%E2%89%A53.10-blue?logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/Pydantic-v2-e92063?logo=pydantic&logoColor=white" alt="Pydantic">
+  <img src="https://img.shields.io/badge/MCP-Protocol-blueviolet" alt="MCP">
+  <img src="https://img.shields.io/badge/pytest-373_pass-brightgreen" alt="Pytest">
   <img src="https://img.shields.io/badge/E2E-6_suites-orange" alt="E2E">
-  <img src="https://img.shields.io/badge/output-text_|_json_|_stream--json-blueviolet" alt="Output">
-  <a href="https://github.com/HKUDS/OpenHarness/actions/workflows/ci.yml"><img src="https://github.com/HKUDS/OpenHarness/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/HKUDS/.github/blob/main/profile/README.md"><img src="https://img.shields.io/badge/Feishu-Group-E9DBFC?style=flat&logo=feishu&logoColor=white" alt="Feishu"></a>
-  <a href="https://github.com/HKUDS/.github/blob/main/profile/README.md"><img src="https://img.shields.io/badge/WeChat-Group-C5EAB4?style=flat&logo=wechat&logoColor=white" alt="WeChat"></a>
-</p>
-
-One Command (**vl**) to Launch **Velaris Agent** and unlock the upstream OpenHarness runtime. 
-
-Supports CLI agent integration including OpenClaw, nanobot, Cursor, and more.
-
-<p align="center">
-  <img src="assets/cli-typing.gif" alt="OpenHarness Terminal Demo" width="800">
-</p>
-
-<p align="center">
-  <img src="assets/architecture-comic.png" alt="How Agent Harness Works" width="800">
-</p>
-
----
-## ✨ OpenHarness's Key Harness Features
-
-<table align="center" width="100%">
-<tr>
-<td width="20%" align="center" style="vertical-align: top; padding: 15px;">
-
-<h3>🔄 Agent Loop</h3>
-
-<div align="center">
-  <img src="https://img.shields.io/badge/Engine-06B6D4?style=for-the-badge&logo=lightning&logoColor=white" alt="Engine" />
-</div>
-
-<img src="assets/scene-agentloop.png" width="140">
-
-<p align="center"><strong>• Streaming Tool-Call Cycle</strong></p>
-<p align="center"><strong>• API Retry with Exponential Backoff</strong></p>
-<p align="center"><strong>• Parallel Tool Execution</strong></p>
-<p align="center"><strong>• Token Counting & Cost Tracking</strong></p>
-
-</td>
-<td width="20%" align="center" style="vertical-align: top; padding: 15px;">
-
-<h3>🔧 Harness Toolkit</h3>
-
-<div align="center">
-  <img src="https://img.shields.io/badge/43+_Tools-10B981?style=for-the-badge&logo=toolbox&logoColor=white" alt="Toolkit" />
-</div>
-
-<img src="assets/scene-toolkit.png" width="140">
-
-<p align="center"><strong>• 43 Tools (File, Shell, Search, Web, MCP)</strong></p>
-<p align="center"><strong>• On-Demand Skill Loading (.md)</strong></p>
-<p align="center"><strong>• Plugin Ecosystem (Skills + Hooks + Agents)</strong></p>
-<p align="center"><strong>• Compatible with anthropics/skills & plugins</strong></p>
-
-</td>
-<td width="20%" align="center" style="vertical-align: top; padding: 15px;">
-
-<h3>🧠 Context & Memory</h3>
-
-<div align="center">
-  <img src="https://img.shields.io/badge/Persistent-8B5CF6?style=for-the-badge&logo=brain&logoColor=white" alt="Context" />
-</div>
-
-<img src="assets/scene-context.png" width="140">
-
-<p align="center"><strong>• CLAUDE.md Discovery & Injection</strong></p>
-<p align="center"><strong>• Context Compression (Auto-Compact)</strong></p>
-<p align="center"><strong>• MEMORY.md Persistent Memory</strong></p>
-<p align="center"><strong>• Session Resume & History</strong></p>
-
-</td>
-<td width="20%" align="center" style="vertical-align: top; padding: 15px;">
-
-<h3>🛡️ Governance</h3>
-
-<div align="center">
-  <img src="https://img.shields.io/badge/Permissions-F59E0B?style=for-the-badge&logo=shield&logoColor=white" alt="Governance" />
-</div>
-
-<img src="assets/scene-governance.png" width="140">
-
-<p align="center"><strong>• Multi-Level Permission Modes</strong></p>
-<p align="center"><strong>• Path-Level & Command Rules</strong></p>
-<p align="center"><strong>• PreToolUse / PostToolUse Hooks</strong></p>
-<p align="center"><strong>• Interactive Approval Dialogs</strong></p>
-
-</td>
-<td width="20%" align="center" style="vertical-align: top; padding: 15px;">
-
-<h3>🤝 Swarm Coordination</h3>
-
-<div align="center">
-  <img src="https://img.shields.io/badge/Multi--Agent-EC4899?style=for-the-badge&logo=network&logoColor=white" alt="Swarm" />
-</div>
-
-<img src="assets/scene-swarm.png" width="140">
-
-<p align="center"><strong>• Subagent Spawning & Delegation</strong></p>
-<p align="center"><strong>• Team Registry & Task Management</strong></p>
-<p align="center"><strong>• Background Task Lifecycle</strong></p>
-<p align="center"><strong>• <a href="https://github.com/HKUDS/ClawTeam">ClawTeam</a> Integration (Roadmap)</strong></p>
-
-</td>
-</tr>
-</table>
-
----
-
-## 🤔 What is an Agent Harness?
-
-An **Agent Harness** is the complete infrastructure that wraps around an LLM to make it a functional agent. The model provides intelligence; the harness provides **hands, eyes, memory, and safety boundaries**.
-
-<p align="center">
-  <img src="assets/harness-equation.png" alt="Harness = Tools + Knowledge + Observation + Action + Permissions" width="700">
-</p>
-
-OpenHarness is an open-source Python implementation designed for **researchers, builders, and the community**:
-
-- **Understand** how production AI agents work under the hood
-- **Experiment** with cutting-edge tools, skills, and agent coordination patterns
-- **Extend** the harness with custom plugins, providers, and domain knowledge
-- **Build** specialized agents on top of proven architecture
-
----
-
-## 📰 What's New
-
-- **2026-04-01** 🎨 **v0.1.0** — Initial **OpenHarness** open-source release featuring complete Harness architecture: 
-
-<p align="center">
-  <strong>Start here:</strong>
-  <a href="#-quick-start">Quick Start</a> ·
-  <a href="#-provider-compatibility">Provider Compatibility</a> ·
-  <a href="docs/SHOWCASE.md">Showcase</a> ·
-  <a href="CONTRIBUTING.md">Contributing</a> ·
-  <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 ---
 
-## 🚀 Quick Start
+## What is Velaris?
 
-### Prerequisites
+Velaris 不是一个评分函数, 是一个**会思考的决策 Agent**.
 
-- **Python 3.10+** and [uv](https://docs.astral.sh/uv/)
-- **Node.js 18+** (optional, for the React terminal UI)
-- An LLM API key
-
-### One-Command Demo
-
-```bash
-ANTHROPIC_API_KEY=your_key uv run velaris -p "Inspect this repository and list the top 3 refactors"
+```
+传统 agent: 用户提问 -> 调 API -> 返回结果 -> 忘掉一切
+Velaris:    用户提问 -> 理解意图 -> 推理需要什么数据 -> 智能获取 ->
+            参考历史决策 -> 个性化评分 -> 推荐+解释 -> 记录+学习
 ```
 
-### Install & Run
+**核心理念**: Context 是护城河. 同样的 LLM, 谁的上下文更全谁的决策更准.
+
+### 三个设计选择
+
+| 载体 | 选择 | 理由 |
+|------|------|------|
+| **知识** | Markdown 文件 | 人和 AI 都能读写, 版本可控, 零依赖 |
+| **工具集成** | MCP 协议 | 标准互操作, 不锁定供应商 |
+| **运行时** | Python 3.10+ | AI/ML 生态最成熟, 类型安全 (Pydantic v2) |
+
+### 三个产品场景
+
+| 场景 | 核心价值 |
+|------|----------|
+| **商旅 AI 助手** | 机票酒店多平台比价 + 意图识别 + 一站式出行方案 |
+| **AI TokenCost** | AI 使用成本优化, 识别浪费, 输出可执行降本方案 |
+| **OpenClaw** | 车端开放智能体运行环境, 三段式派单协议 (意图订单 -> 服务提案 -> 可审计合约) |
+
+---
+
+## Architecture
+
+<p align="center">
+  <img src="assets/architecture-velaris.png" alt="Velaris Decision Intelligence Architecture" width="900">
+</p>
+
+### 三层设计
+
+**Layer 1: Agent Loop** - 基于 OpenHarness engine, 流式 LLM 推理 + 多轮工具调用编排. 不写死 pipeline, 让 LLM 自主决定调什么工具、调几次.
+
+**Layer 2: Decision Tools** - 11 个专用决策工具:
+- **记忆类**: 召回用户偏好、检索相似历史决策、保存决策全量记录
+- **决策类**: 多维评分 (支持个性化权重)、智能搜索、价格趋势
+- **治理类**: 合规检查、权限验证、审批流程
+
+**Layer 3: Domain Data Sources** - 可插拔的场景数据源, Agent 自主决定查询哪些源、用什么参数.
+
+### 数据飞轮
+
+```
+用户使用 -> 决策记录 -> 偏好学习 -> 权重更新 -> 推荐更准 -> 用户更愿意用
+```
+
+每次决策都被完整记录 (意图 + 选项 + 推荐 + 用户选择 + 满意度), PreferenceLearner 从实际选择中学习个性化权重. 用的人越多, 推荐越准.
+
+---
+
+## Quick Start
+
+### 环境要求
+
+- Python 3.10+
+- [uv](https://github.com/astral-sh/uv) (推荐) 或 pip
+
+### 安装
 
 ```bash
-# Enter the vendored runtime and install
-cd velaris-agent-py
+git clone https://github.com/jiaweifreshair/velaris-agent.git
+cd velaris-agent
 uv sync --extra dev
-
-# Example: use Kimi as the backend
-export ANTHROPIC_BASE_URL=https://api.moonshot.cn/anthropic
-export ANTHROPIC_API_KEY=your_kimi_api_key
-export ANTHROPIC_MODEL=kimi-k2.5
-
-# Launch
-velaris               # if venv is activated
-uv run velaris        # without activating venv
-# Legacy compatibility
-uv run oh
 ```
 
-<p align="center">
-  <img src="assets/landing.png" alt="OpenHarness Landing Screen" width="700">
-</p>
-
-### Non-Interactive Mode (Pipes & Scripts)
+### 运行
 
 ```bash
-# Single prompt → stdout
-velaris -p "Explain this codebase"
+# CLI 模式
+velaris
 
-# JSON output for programmatic use
-velaris -p "List all functions in main.py" --output-format json
+# 短命令
+vl
 
-# Stream JSON events in real-time
-velaris -p "Fix the bug" --output-format stream-json
+# 非交互模式
+velaris -p "帮我查下周三北京到上海的机票"
+
+# 指定模型
+velaris --model claude-sonnet-4 -p "分析我的 API 成本"
 ```
 
-## 🔌 Provider Compatibility
+### 配置
 
-OpenHarness currently detects and adapts to a small set of provider profiles in code. The table below is intentionally conservative and reflects the profiles implemented in `src/openharness/api/provider.py`.
+```bash
+# API Key (必需)
+export ANTHROPIC_API_KEY=your-key-here
 
-| Provider profile | Detection signal | Auth kind | Voice mode | Notes |
-|------------------|------------------|-----------|------------|-------|
-| **Anthropic** | Default when no custom `ANTHROPIC_BASE_URL` is set | API key | Not wired in current build | Default Claude-oriented setup |
-| **Moonshot / Kimi** | `ANTHROPIC_BASE_URL` contains `moonshot` or model starts with `kimi` | API key | Not wired in current build | Works through an Anthropic-compatible endpoint |
-| **Vertex-compatible** | Base URL contains `vertex` or `aiplatform` | GCP | Not wired in current build | Good fit for Anthropic-style gateways on Vertex |
-| **Bedrock-compatible** | Base URL contains `bedrock` | AWS | Not wired in current build | Intended for Bedrock-style deployments |
-| **Generic Anthropic-compatible** | Any other explicit `ANTHROPIC_BASE_URL` | API key | Not wired in current build | Useful for proxies and internal gateways |
+# 可选: 自定义模型
+export ANTHROPIC_MODEL=claude-sonnet-4
 
-If you are evaluating cross-provider workflows or want a concrete demo path, start with Anthropic or the Kimi example above, then compare behavior against your own compatible endpoint.
+# 可选: 兼容其他提供商
+export ANTHROPIC_BASE_URL=https://your-proxy/v1
+```
 
 ---
 
-## 🏗️ Harness Architecture
+## Decision Tools
 
-OpenHarness implements the core Agent Harness pattern with 10 subsystems:
+### 记忆类
 
-```
-openharness/
-  engine/          # 🧠 Agent Loop — query → stream → tool-call → loop
-  tools/           # 🔧 43 Tools — file I/O, shell, search, web, MCP
-  skills/          # 📚 Knowledge — on-demand skill loading (.md files)
-  plugins/         # 🔌 Extensions — commands, hooks, agents, MCP servers
-  permissions/     # 🛡️ Safety — multi-level modes, path rules, command deny
-  hooks/           # ⚡ Lifecycle — PreToolUse/PostToolUse event hooks
-  commands/        # 💬 54 Commands — /help, /commit, /plan, /resume, ...
-  mcp/             # 🌐 MCP — Model Context Protocol client
-  memory/          # 🧠 Memory — persistent cross-session knowledge
-  tasks/           # 📋 Tasks — background task management
-  coordinator/     # 🤝 Multi-Agent — subagent spawning, team coordination
-  prompts/         # 📝 Context — system prompt assembly, CLAUDE.md, skills
-  config/          # ⚙️ Settings — multi-layer config, migrations
-  ui/              # 🖥️ React TUI — backend protocol + frontend
-```
+| 工具 | 说明 |
+|------|------|
+| `recall_preferences` | 召回用户历史偏好 - 个性化权重 + 行为模式 + 满意度 |
+| `recall_decisions` | 检索相似历史决策 - "上次类似情况怎么选的, 结果如何" |
+| `save_decision` | 保存完整决策快照 - 意图/选项/推荐/权重/工具调用 |
 
-### The Agent Loop
+### 决策类
 
-The heart of the harness. One loop, endlessly composable:
+| 工具 | 说明 |
+|------|------|
+| `decision_score` | 多维加权评分 - 支持个性化权重自动切换 |
+| `score_options` | 通用选项评分 (biz layer) |
+| `biz_execute` | 业务闭环执行 (路由 -> 签权 -> 执行 -> 记录) |
+| `biz_plan` | 能力规划 (场景识别 + 约束推理) |
+
+### 治理类
+
+| 工具 | 说明 |
+|------|------|
+| `travel_recommend` | 商旅比价推荐 |
+| `tokencost_analyze` | AI 成本分析与优化 |
+| `openclaw_dispatch` | OpenClaw 三段式调度 |
+
+---
+
+## Decision Memory
+
+Velaris 的竞争壁垒: 每次决策都被完整记录, 用于未来学习.
 
 ```python
-while True:
-    response = await api.stream(messages, tools)
-    
-    if response.stop_reason != "tool_use":
-        break  # Model is done
-    
-    for tool_call in response.tool_uses:
-        # Permission check → Hook → Execute → Hook → Result
-        result = await harness.execute_tool(tool_call)
-    
-    messages.append(tool_results)
-    # Loop continues — model sees results, decides next action
+# 决策记录结构
+DecisionRecord:
+  decision_id     # 唯一 ID
+  user_id         # 用户
+  scenario        # 场景 (travel/tokencost/openclaw)
+  query           # 原始意图
+  options_discovered  # 发现的所有选项
+  scores          # 评分结果
+  weights_used    # 使用的权重 (可能是个性化的)
+  recommended     # 系统推荐
+  user_choice     # 用户最终选了什么 (反馈回填)
+  user_feedback   # 满意度 0-5 (反馈回填)
 ```
 
-The model decides **what** to do. The harness handles **how** — safely, efficiently, with full observability.
-
-### Harness Flow
-
-```mermaid
-flowchart LR
-    U[User Prompt] --> C[CLI or React TUI]
-    C --> R[RuntimeBundle]
-    R --> Q[QueryEngine]
-    Q --> A[Anthropic-compatible API Client]
-    A -->|tool_use| T[Tool Registry]
-    T --> P[Permissions + Hooks]
-    P --> X[Files Shell Web MCP Tasks]
-    X --> Q
-```
-
----
-
-## ✨ Features
-
-### 🔧 Tools (43+)
-
-| Category | Tools | Description |
-|----------|-------|-------------|
-| **File I/O** | Bash, Read, Write, Edit, Glob, Grep | Core file operations with permission checks |
-| **Search** | WebFetch, WebSearch, ToolSearch, LSP | Web and code search capabilities |
-| **Notebook** | NotebookEdit | Jupyter notebook cell editing |
-| **Agent** | Agent, SendMessage, TeamCreate/Delete | Subagent spawning and coordination |
-| **Task** | TaskCreate/Get/List/Update/Stop/Output | Background task management |
-| **MCP** | MCPTool, ListMcpResources, ReadMcpResource | Model Context Protocol integration |
-| **Mode** | EnterPlanMode, ExitPlanMode, Worktree | Workflow mode switching |
-| **Schedule** | CronCreate/List/Delete, RemoteTrigger | Scheduled and remote execution |
-| **Meta** | Skill, Config, Brief, Sleep, AskUser | Knowledge loading, configuration, interaction |
-
-Every tool has:
-- **Pydantic input validation** — structured, type-safe inputs
-- **Self-describing JSON Schema** — models understand tools automatically
-- **Permission integration** — checked before every execution
-- **Hook support** — PreToolUse/PostToolUse lifecycle events
-
-### 📚 Skills System
-
-Skills are **on-demand knowledge** — loaded only when the model needs them:
-
-```
-Available Skills:
-- commit: Create clean, well-structured git commits
-- review: Review code for bugs, security issues, and quality
-- debug: Diagnose and fix bugs systematically
-- plan: Design an implementation plan before coding
-- test: Write and run tests for code
-- simplify: Refactor code to be simpler and more maintainable
-- pdf: PDF processing with pypdf (from anthropics/skills)
-- xlsx: Excel operations (from anthropics/skills)
-- ... 40+ more
-```
-
-**Compatible with [anthropics/skills](https://github.com/anthropics/skills)** — just copy `.md` files to `~/.openharness/skills/`.
-
-### 🔌 Plugin System
-
-**Compatible with [claude-code plugins](https://github.com/anthropics/claude-code/tree/main/plugins)**. Tested with 12 official plugins:
-
-| Plugin | Type | What it does |
-|--------|------|-------------|
-| `commit-commands` | Commands | Git commit, push, PR workflows |
-| `security-guidance` | Hooks | Security warnings on file edits |
-| `hookify` | Commands + Agents | Create custom behavior hooks |
-| `feature-dev` | Commands | Feature development workflow |
-| `code-review` | Agents | Multi-agent PR review |
-| `pr-review-toolkit` | Agents | Specialized PR review agents |
-
-```bash
-# Manage plugins
-oh plugin list
-oh plugin install <source>
-oh plugin enable <name>
-```
-
-### 🤝 Ecosystem Workflows
-
-OpenHarness is useful as a lightweight harness layer around Claude-style tooling conventions:
-
-- **OpenClaw-oriented workflows** can reuse Markdown-first knowledge and command-driven collaboration patterns.
-- **Claude-style plugins and skills** stay portable because OpenHarness keeps those formats familiar.
-- **ClawTeam-style multi-agent work** maps well onto the built-in team, task, and background execution primitives.
-
-For concrete usage ideas instead of generic claims, see [`docs/SHOWCASE.md`](docs/SHOWCASE.md).
-
-### 🛡️ Permissions
-
-Multi-level safety with fine-grained control:
-
-| Mode | Behavior | Use Case |
-|------|----------|----------|
-| **Default** | Ask before write/execute | Daily development |
-| **Auto** | Allow everything | Sandboxed environments |
-| **Plan Mode** | Block all writes | Large refactors, review first |
-
-**Path-level rules** in `settings.json`:
-```json
-{
-  "permission": {
-    "mode": "default",
-    "path_rules": [{"pattern": "/etc/*", "allow": false}],
-    "denied_commands": ["rm -rf /", "DROP TABLE *"]
-  }
-}
-```
-
-### 🖥️ Terminal UI
-
-React/Ink TUI with full interactive experience:
-
-- **Command picker**: Type `/` → arrow keys to select → Enter
-- **Permission dialog**: Interactive y/n with tool details
-- **Mode switcher**: `/permissions` → select from list
-- **Session resume**: `/resume` → pick from history
-- **Animated spinner**: Real-time feedback during tool execution
-- **Keyboard shortcuts**: Shown at the bottom, context-aware
-
-### 📡 CLI
-
-```
-oh [OPTIONS] COMMAND [ARGS]
-
-Session:     -c/--continue, -r/--resume, -n/--name
-Model:       -m/--model, --effort, --max-turns
-Output:      -p/--print, --output-format text|json|stream-json
-Permissions: --permission-mode, --dangerously-skip-permissions
-Context:     -s/--system-prompt, --append-system-prompt, --settings
-Advanced:    -d/--debug, --mcp-config, --bare
-
-Subcommands: oh mcp | oh plugin | oh auth
-```
-
----
-
-## 📊 Test Results
-
-| Suite | Tests | Status |
-|-------|-------|--------|
-| Unit + Integration | 114 | ✅ All passing |
-| CLI Flags E2E | 6 | ✅ Real model calls |
-| Harness Features E2E | 9 | ✅ Retry, skills, parallel, permissions |
-| React TUI E2E | 3 | ✅ Welcome, conversation, status |
-| TUI Interactions E2E | 4 | ✅ Commands, permissions, shortcuts |
-| Real Skills + Plugins | 12 | ✅ anthropics/skills + claude-code/plugins |
-
-```bash
-# Run all tests
-uv run pytest -q                           # 114 unit/integration
-python scripts/test_harness_features.py     # Harness E2E
-python scripts/test_real_skills_plugins.py  # Real plugins E2E
-```
-
----
-
-## 🔧 Extending OpenHarness
-
-### Add a Custom Tool
+### 偏好学习
 
 ```python
+# PreferenceLearner 从用户实际选择中学习
+# 用户连续5次选了最贵的舒适方案:
+#   price 权重: 0.40 -> 0.22
+#   comfort 权重: 0.25 -> 0.43
+# 第6次直接推荐舒适方案
+```
+
+算法: 贝叶斯先验 + 指数衰减 (近期决策权重更大) + 归一化
+
+---
+
+## OpenClaw Protocol
+
+三段式派单协议 - 从"黑箱匹配"到"可审计契约":
+
+### Stage 1: IntentOrder (意图订单)
+
+不是"我要一辆车", 而是完整的任务请求:
+
+```python
+IntentOrder:
+  origin / destination      # 起终点
+  time_requirements         # 时间要求 + 弹性
+  service_preferences       # 车型/司机风格/拼车意愿
+  budget                    # 预算 + 是否接受溢价
+  privacy_level             # 隐私等级
+  constraints               # 行李/儿童/老人/轮椅
+  enterprise_identity       # 企业报销身份
+  additional_services       # 附加服务需求
+```
+
+### Stage 2: ServiceProposal (服务提案)
+
+每辆车返回结构化提案 (服务投标):
+
+```python
+ServiceProposal:
+  eta / pricing             # ETA + 定价明细
+  driver / vehicle          # 司机画像 + 车辆画像
+  task_understanding_score  # 任务理解度
+  historical_fulfillment    # 历史履约分
+  commitment_boundaries     # 可承诺边界
+  add_on_services           # 附加服务
+```
+
+### Stage 3: TransactionContract (可审计合约)
+
+```python
+TransactionContract:
+  price_composition         # 价格组成 (透明)
+  service_scope             # 服务范围
+  data_permissions          # 数据权限 (位置/广告)
+  wait_rules                # 等待规则
+  breach_clauses            # 违约条款
+  add_on_profit_sharing     # 附加服务分润
+  review_mechanism          # 评价与申诉
+```
+
+---
+
+## Harness Infrastructure
+
+继承自 OpenHarness 的 10 子系统基础设施:
+
+| 子系统 | 说明 |
+|--------|------|
+| **Engine** | 核心 agent 循环 - 流式 LLM + 工具调用编排 |
+| **Tools** | 43+ 内置工具 + 11 决策工具, BaseTool 抽象 |
+| **Skills** | Markdown 知识注入, 引导 Agent 行为 |
+| **Plugins** | 插件发现/加载/生命周期, plugin.json manifest |
+| **Permissions** | 多级权限 (tool/file/command), 3 种模式 |
+| **Hooks** | 生命周期事件 (session/tool use), 支持 command/http/prompt |
+| **Memory** | 持久化跨会话记忆 + 决策记忆 |
+| **Swarm** | 多 agent 协调, subprocess/in-process 后端 |
+| **Tasks** | 后台任务管理, shell/agent 任务 |
+| **MCP** | Model Context Protocol 工具集成 |
+
+---
+
+## Tests
+
+```bash
+# 运行全部测试
+uv run pytest tests/ -q
+
+# 当前状态
+# 373 passed, 0 failed
+
+# 测试分布
+# - 基础设施: 314 tests (engine, tools, permissions, hooks, ...)
+# - 业务层: 26 tests (router, orchestrator, domain tools)
+# - 决策记忆: 25 tests (memory, preference learning, decision tools)
+# - OpenClaw 协议: 33 tests (protocol, dispatch, agents)
+```
+
+---
+
+## Project Structure
+
+```
+velaris-agent/
+├── src/
+│   ├── openharness/              # 基础设施 (OpenHarness engine)
+│   │   ├── engine/               # Agent 循环
+│   │   ├── tools/                # 43+ 内置 + 11 决策工具
+│   │   ├── skills/bundled/       # Markdown 知识文件
+│   │   ├── plugins/              # 插件系统
+│   │   ├── permissions/          # 权限管理
+│   │   ├── hooks/                # 生命周期钩子
+│   │   ├── memory/               # 基础记忆系统
+│   │   ├── swarm/                # 多 agent 协调
+│   │   ├── mcp/                  # MCP 协议集成
+│   │   └── ...
+│   └── velaris_agent/            # 业务层
+│       ├── memory/               # 决策记忆 + 偏好学习
+│       ├── velaris/              # 治理运行时 (router, authority, ...)
+│       ├── biz/                  # 场景引擎
+│       ├── adapters/             # 数据源适配
+│       └── scenarios/            # 产品场景
+│           └── openclaw/         # 三段式协议 + 调度引擎
+├── tests/                        # 373 tests
+├── config/                       # 路由策略 YAML
+├── docs/                         # 技术方案 + 架构文档
+├── frontend/                     # React/Ink 终端 UI
+├── scripts/                      # E2E 测试脚本
+└── pyproject.toml
+```
+
+---
+
+## Extending Velaris
+
+### 添加新的 Decision Tool
+
+```python
+from openharness.tools.base import BaseTool, ToolResult, ToolExecutionContext
 from pydantic import BaseModel, Field
-from openharness.tools.base import BaseTool, ToolExecutionContext, ToolResult
 
 class MyToolInput(BaseModel):
-    query: str = Field(description="Search query")
+    query: str = Field(description="搜索查询")
 
 class MyTool(BaseTool):
     name = "my_tool"
-    description = "Does something useful"
+    description = "我的自定义决策工具"
     input_model = MyToolInput
 
-    async def execute(self, arguments: MyToolInput, context: ToolExecutionContext) -> ToolResult:
-        return ToolResult(output=f"Result for: {arguments.query}")
+    async def execute(self, args: MyToolInput, context: ToolExecutionContext) -> ToolResult:
+        result = await do_something(args.query)
+        return ToolResult(output=json.dumps(result))
+
+    def is_read_only(self, args: MyToolInput) -> bool:
+        return True
 ```
 
-### Add a Custom Skill
+### 添加新的 Skill (Markdown 知识)
 
-Create `~/.openharness/skills/my-skill.md`:
+创建 `~/.velaris/skills/my-skill.md`:
 
 ```markdown
 ---
 name: my-skill
-description: Expert guidance for my specific domain
+description: 我的自定义决策流程
 ---
 
 # My Skill
 
 ## When to use
-Use when the user asks about [your domain].
+当用户需要...
 
 ## Workflow
-1. Step one
-2. Step two
-...
+1. 先做...
+2. 然后...
+3. 最后...
 ```
 
-### Add a Plugin
+### 添加 MCP Server
 
-Create `.openharness/plugins/my-plugin/.claude-plugin/plugin.json`:
+在 `~/.velaris/settings.json`:
 
 ```json
 {
-  "name": "my-plugin",
-  "version": "1.0.0",
-  "description": "My custom plugin"
+  "mcp_servers": {
+    "my-server": {
+      "command": "npx",
+      "args": ["-y", "my-mcp-server"]
+    }
+  }
 }
 ```
 
-Add commands in `commands/*.md`, hooks in `hooks/hooks.json`, agents in `agents/*.md`.
-
 ---
 
-## 🌍 Showcase
+## Contributing
 
-OpenHarness is most useful when treated as a small, inspectable harness you can adapt to a real workflow:
-
-- **Repo coding assistant** for reading code, patching files, and running checks locally.
-- **Headless scripting tool** for `json` and `stream-json` output in automation flows.
-- **Plugin and skill testbed** for experimenting with Claude-style extensions.
-- **Multi-agent prototype harness** for task delegation and background execution.
-- **Provider comparison sandbox** across Anthropic-compatible backends.
-
-See [`docs/SHOWCASE.md`](docs/SHOWCASE.md) for short, reproducible examples.
-
----
-
-## 🤝 Contributing
-
-OpenHarness is a **community-driven research project**. We welcome contributions in:
-
-| Area | Examples |
-|------|---------|
-| **Tools** | New tool implementations for specific domains |
-| **Skills** | Domain knowledge `.md` files (finance, science, DevOps...) |
-| **Plugins** | Workflow plugins with commands, hooks, agents |
-| **Providers** | Support for more LLM backends (OpenAI, Ollama, etc.) |
-| **Multi-Agent** | Coordination protocols, team patterns |
-| **Testing** | E2E scenarios, edge cases, benchmarks |
-| **Documentation** | Architecture guides, tutorials, translations |
+参见 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```bash
-# Development setup
-git clone https://github.com/HKUDS/OpenHarness.git
-cd OpenHarness
+# 开发环境
 uv sync --extra dev
-uv run pytest -q  # Verify everything works
+
+# 测试
+uv run pytest tests/ -v
+
+# Lint
+uv run ruff check src tests
+
+# 类型检查
+uv run mypy src/velaris_agent
 ```
 
-Useful contributor entry points:
-
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup, checks, and PR expectations
-- [`CHANGELOG.md`](CHANGELOG.md) for user-visible changes
-- [`docs/SHOWCASE.md`](docs/SHOWCASE.md) for real-world usage patterns worth documenting
-
 ---
 
-## 📄 License
+## License
 
-MIT — see [LICENSE](LICENSE).
+[MIT](LICENSE)
 
 ---
 
 <p align="center">
-  <img src="assets/logo.png" alt="OpenHarness" width="48">
-  <br>
-  <strong>Oh my Harness!</strong>
-  <br>
-  <em>The model is the agent. The code is the harness.</em>
-</p>
-
-<div align="center">
-  <a href="https://star-history.com/#HKUDS/OpenHarness&Date">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=HKUDS/OpenHarness&type=Date&theme=dark" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=HKUDS/OpenHarness&type=Date" />
-      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=HKUDS/OpenHarness&type=Date" style="border-radius: 15px; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3);" />
-    </picture>
-  </a>
-</div>
-
-<p align="center">
-  <em> Thanks for visiting ✨ OpenHarness!</em><br><br>
-  <img src="https://visitor-badge.laobi.icu/badge?page_id=HKUDS.OpenHarness&style=for-the-badge&color=00d4ff" alt="Views">
+  <strong>Context is the moat. Every decision makes the next one better.</strong>
 </p>
