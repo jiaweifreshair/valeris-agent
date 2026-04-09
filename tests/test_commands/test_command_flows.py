@@ -150,3 +150,19 @@ async def test_plugin_command_lifecycle_flow(tmp_path: Path, monkeypatch):
     uninstall_command, uninstall_args = registry.lookup("/plugin uninstall fixture-plugin")
     uninstall_result = await uninstall_command.handler(uninstall_args, context)
     assert "Uninstalled plugin" in uninstall_result.message
+
+
+@pytest.mark.asyncio
+async def test_plugin_uninstall_rejects_path_traversal_name(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("OPENHARNESS_CONFIG_DIR", str(tmp_path / "config"))
+    registry = create_default_command_registry()
+    context = _build_context(tmp_path)
+
+    escaped_target = tmp_path / "config" / "escaped-plugin"
+    escaped_target.mkdir(parents=True)
+
+    uninstall_command, uninstall_args = registry.lookup("/plugin uninstall ../escaped-plugin")
+    uninstall_result = await uninstall_command.handler(uninstall_args, context)
+
+    assert "not found" in uninstall_result.message
+    assert escaped_target.exists()

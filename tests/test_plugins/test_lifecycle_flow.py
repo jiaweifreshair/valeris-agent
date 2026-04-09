@@ -91,3 +91,14 @@ async def test_plugin_install_load_and_uninstall_flow(tmp_path: Path, monkeypatc
 
     assert uninstall_plugin("fixture-plugin") is True
     assert load_plugins(load_settings(), project) == []
+
+
+def test_uninstall_plugin_rejects_path_traversal(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("OPENHARNESS_CONFIG_DIR", str(tmp_path / "config"))
+    escaped_target = tmp_path / "config" / "escape-target"
+    escaped_target.mkdir(parents=True)
+    (escaped_target / "payload.txt").write_text("keep", encoding="utf-8")
+
+    assert uninstall_plugin("../escape-target") is False
+    assert escaped_target.exists()
+    assert (escaped_target / "payload.txt").read_text(encoding="utf-8") == "keep"

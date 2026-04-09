@@ -98,6 +98,12 @@ Velaris 现在把一部分关键安全能力下沉到 `src/openharness/security/
 - **输入清洗**：`bash.cwd` / MCP `cwd` 会先经过字符白名单校验，阻断把 shell 元字符塞进工作目录参数的攻击
 - **剩余执行链补齐**：`bridge spawn`、后台 `task`、`remote_trigger` 与 command hook 现在也复用同一套命令审批、工作目录校验与输出脱敏逻辑
 - **子进程密钥降暴露**：React 前端拉起 backend、以及本地 agent 背景任务，不再把 API Key 放进子进程 argv，改为通过环境变量传递
+- **非 subprocess 删除边界**：worktree 清理的失败兜底只允许删除框架托管目录；插件卸载拒绝 `..`、绝对路径和路径分隔符，防止路径逃逸删除
+
+补充说明：
+
+- 这轮加固的详细设计、覆盖矩阵与 residual risk 见 `docs/SECURITY-EXECUTION-HARDENING.md`
+- 可直接用于提 PR 的说明草稿见 `docs/PR-EXECUTION-HARDENING.md`
 
 ### 当前代码结构的真实落点
 
