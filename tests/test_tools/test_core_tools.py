@@ -377,6 +377,33 @@ async def test_worktree_tools(tmp_path: Path):
 
 
 @pytest.mark.asyncio
+async def test_enter_worktree_rejects_protected_target_path(tmp_path: Path):
+    subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True, text=True)
+
+    result = await EnterWorktreeTool().execute(
+        EnterWorktreeToolInput(
+            branch="feature/demo",
+            path=str(Path.home() / ".ssh" / "demo-worktree"),
+        ),
+        ToolExecutionContext(cwd=tmp_path),
+    )
+
+    assert result.is_error is True
+    assert "受保护" in result.output
+
+
+@pytest.mark.asyncio
+async def test_exit_worktree_rejects_protected_target_path(tmp_path: Path):
+    result = await ExitWorktreeTool().execute(
+        ExitWorktreeToolInput(path=str(Path.home() / ".ssh" / "demo-worktree")),
+        ToolExecutionContext(cwd=tmp_path),
+    )
+
+    assert result.is_error is True
+    assert "受保护" in result.output
+
+
+@pytest.mark.asyncio
 async def test_cron_and_remote_trigger_tools(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("OPENHARNESS_DATA_DIR", str(tmp_path / "data"))
     context = ToolExecutionContext(cwd=tmp_path)

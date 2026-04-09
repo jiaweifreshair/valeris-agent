@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import subprocess
-from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from openharness.security import (
+    is_protected_write_path,
+    render_process_output,
+    resolve_security_settings,
+    resolve_tool_path,
+)
 from openharness.tools.base import BaseTool, ToolExecutionContext, ToolResult
 
 
@@ -23,14 +28,18 @@ class ExitWorktreeTool(BaseTool):
     description = "Remove a git worktree by path."
     input_model = ExitWorktreeToolInput
 
-    async def execute(
+    async def execute(  # type: ignore[override]
         self,
         arguments: ExitWorktreeToolInput,
         context: ToolExecutionContext,
     ) -> ToolResult:
-        path = Path(arguments.path).expanduser()
-        if not path.is_absolute():
-            path = (context.cwd / path).resolve()
+        security_settings = resolve_security_settings(context.metadata.get("security_settings"))
+        path = resolve_tool_path(context.cwd, arguments.path)
+        if is_protected_write_path(path):
+            return ToolResult(
+                output=f"Write denied: {path} 是受保护的系统或凭据路径。",
+                is_error=True,
+            )
         result = subprocess.run(
             ["git", "worktree", "remove", "--force", str(path)],
             cwd=context.cwd,
@@ -38,5 +47,14 @@ class ExitWorktreeTool(BaseTool):
             text=True,
             check=False,
         )
-        output = (result.stdout or result.stderr).strip() or f"Removed worktree {path}"
+        output = render_process_output(
+            stdout=result.stdout,
+            stderr=result.stderr,
+            redact_secrets=security_settings.redact_secrets,
+            default_text=(
+                f"Removed worktree {path}"
+                if result.returncode == 0
+                else f"git worktree remove failed for {path}"
+            ),
+        )
         return ToolResult(output=output, is_error=result.returncode != 0)

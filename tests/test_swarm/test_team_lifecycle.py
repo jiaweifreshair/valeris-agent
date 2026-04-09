@@ -11,6 +11,7 @@ from openharness.swarm.team_lifecycle import (
     TeamFile,
     TeamLifecycleManager,
     TeamMember,
+    _destroy_worktree,
 )
 
 
@@ -195,3 +196,29 @@ def test_remove_nonexistent_member_raises(manager):
 def test_add_member_to_nonexistent_team_raises(manager):
     with pytest.raises(ValueError, match="does not exist"):
         manager.add_member("no-team", _make_member())
+
+
+@pytest.mark.asyncio
+async def test_destroy_worktree_only_allows_managed_fallback_paths(tmp_path, monkeypatch):
+    monkeypatch.setenv("VELARIS_CONFIG_DIR", str(tmp_path / "config"))
+    outside = tmp_path / "outside-worktree"
+    outside.mkdir(parents=True)
+    (outside / "payload.txt").write_text("keep", encoding="utf-8")
+
+    await _destroy_worktree(str(outside))
+
+    assert outside.exists()
+    assert (outside / "payload.txt").read_text(encoding="utf-8") == "keep"
+
+
+@pytest.mark.asyncio
+async def test_destroy_worktree_keeps_managed_directory_cleanup(tmp_path, monkeypatch):
+    config_dir = tmp_path / "config"
+    monkeypatch.setenv("VELARIS_CONFIG_DIR", str(config_dir))
+    managed = config_dir / "worktrees" / "demo"
+    managed.mkdir(parents=True)
+    (managed / "payload.txt").write_text("remove", encoding="utf-8")
+
+    await _destroy_worktree(str(managed))
+
+    assert not managed.exists()

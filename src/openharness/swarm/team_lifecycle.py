@@ -20,11 +20,11 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from openharness.config.paths import get_config_dir
 from openharness.swarm.mailbox import get_team_dir
-from openharness.swarm.types import BackendType
+from openharness.swarm.types import BackendType, PaneBackend
 
 
 # ---------------------------------------------------------------------------
@@ -506,7 +506,7 @@ def set_member_mode(
     for k, m in team_file.members.items():
         if m.name == member_name:
             team_file.members[k] = TeamMember(
-                **{**m.to_dict(), "mode": mode}  # type: ignore[arg-type]
+                **{**m.to_dict(), "mode": mode}
             )
             break
 
@@ -556,7 +556,7 @@ def set_multiple_member_modes(
         new_mode = update_map.get(m.name)
         if new_mode is not None and m.mode != new_mode:
             team_file.members[k] = TeamMember(
-                **{**m.to_dict(), "mode": new_mode}  # type: ignore[arg-type]
+                **{**m.to_dict(), "mode": new_mode}
             )
             any_changed = True
 
@@ -596,7 +596,7 @@ async def set_member_active(
     for k, m in list(team_file.members.items()):
         if m.name == member_name:
             team_file.members[k] = TeamMember(
-                **{**m.to_dict(), "is_active": is_active}  # type: ignore[arg-type]
+                **{**m.to_dict(), "is_active": is_active}
             )
             break
 
@@ -659,7 +659,7 @@ async def _kill_orphaned_teammate_panes(team_name: str) -> None:
     async def _kill_one(member: TeamMember) -> None:
         try:
             executor = registry.get_executor(member.backend_type)
-            await executor.kill_pane(
+            await cast(PaneBackend, executor).kill_pane(
                 member.tmux_pane_id,
                 use_external_session=use_external_session,
             )
@@ -704,8 +704,20 @@ async def _destroy_worktree(worktree_path: str) -> None:
     Tries ``git worktree remove --force`` first; falls back to ``shutil.rmtree``.
     """
     wt = Path(worktree_path)
-    git_file = wt / ".git"
+    try:
+        resolved_wt = wt.expanduser().resolve()
+    except OSError:
+        resolved_wt = wt.expanduser().absolute()
+    git_file = resolved_wt / ".git"
     main_repo_path: str | None = None
+    managed_worktree_root = (get_config_dir() / "worktrees").resolve()
+    allow_rmtree_fallback = False
+
+    try:
+        resolved_wt.relative_to(managed_worktree_root)
+        allow_rmtree_fallback = True
+    except ValueError:
+        allow_rmtree_fallback = False
 
     try:
         content = git_file.read_text(encoding="utf-8").strip()
@@ -720,7 +732,7 @@ async def _destroy_worktree(worktree_path: str) -> None:
     if main_repo_path:
         try:
             result = subprocess.run(
-                ["git", "worktree", "remove", "--force", worktree_path],
+                ["git", "worktree", "remove", "--force", str(resolved_wt)],
                 cwd=main_repo_path,
                 capture_output=True,
                 text=True,
@@ -733,8 +745,11 @@ async def _destroy_worktree(worktree_path: str) -> None:
         except (subprocess.SubprocessError, OSError):
             pass
 
+    if not allow_rmtree_fallback:
+        return
+
     try:
-        shutil.rmtree(worktree_path, ignore_errors=True)
+        shutil.rmtree(resolved_wt, ignore_errors=True)
     except OSError:
         pass
 
