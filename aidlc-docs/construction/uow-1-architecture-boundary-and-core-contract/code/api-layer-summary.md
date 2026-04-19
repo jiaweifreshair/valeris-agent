@@ -30,6 +30,7 @@
 ### 3. 错误输出保持结构化
 - orchestrator 在高风险 deny、barrier fail-closed、业务执行失败等场景下，会抛出结构化 envelope payload。
 - `biz_execute` 捕获 `RuntimeError` 后仍将结构化内容按错误结果返回，便于上层 UI / CLI 继续消费标准字段。
+- `biz_execute` 默认使用 `context.cwd` 推导 SQLite 路径，避免写到意外位置；且该工具会写入 runtime 记录，因此不能标记为只读。
 
 ## 本阶段验证入口
 
@@ -47,15 +48,15 @@
   tests/test_biz/test_persistence_barrier.py \
   tests/test_biz/test_orchestrator.py \
   tests/test_persistence/test_schema.py \
-  tests/test_persistence/test_postgres_runtime.py \
-  tests/test_persistence/test_postgres_execution.py \
+  tests/test_persistence/test_sqlite_runtime.py \
+  tests/test_persistence/test_sqlite_execution.py \
   tests/test_services/test_session_storage.py \
   tests/test_tools/test_biz_execute_tool.py -q
 ```
 
 ## 本阶段实际验证结果
-- focused orchestrator / tool 回归：`11 passed, 1 skipped`
-- UOW-1 汇总回归：`32 passed, 3 skipped`
+- focused orchestrator / tool 回归：`14 passed`
+- UOW-1 汇总回归：`33 passed`
 
 ## 剩余风险
 - `biz_execute` 当前仍以 `RuntimeError` 作为 orchestrator 错误边界；后续若要继续细分 CLI / API 错误码，可再引入专门异常层，但不应破坏现有 envelope-first contract。

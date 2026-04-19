@@ -13,7 +13,7 @@
 | 组件 | 类型 | 主要职责 |
 | --- | --- | --- |
 | `ExecutionRepository` | 持久化组件 | 管理 execution 主表写入、状态推进、恢复读取 |
-| `SessionRepository` | 持久化组件 | 管理 session snapshot / reference 的 PostgreSQL 存储 |
+| `SessionRepository` | 持久化组件 | 管理 session snapshot / reference 的 SQLite 存储 |
 | `TaskRepository` | 持久化组件 | 管理 task 显式结构记录 |
 | `OutcomeRepository` | 持久化组件 | 管理 outcome 显式结构记录 |
 | `AuditRepository` | 持久化组件 | 管理 audit 事件显式结构记录 |
@@ -31,7 +31,7 @@
 
 #### 职责
 
-- 创建 `BizExecutionRecord` 的 PostgreSQL 主记录
+- 创建 `BizExecutionRecord` 的 SQLite 主记录
 - 推进 `execution_status / gate_status / audit_status`
 - 读取 execution 恢复所需核心上下文
 - 持有 completion 三层派生字段与 resume_cursor
@@ -56,7 +56,7 @@
 
 #### 职责
 
-- 把 session snapshot / reference 从文件链路迁移到 PostgreSQL 主线
+- 把 session snapshot / reference 从旧 JSON/文件链路迁移到 SQLite 主线
 - 维护 `session_id` 与 `execution_id` 的关联边界
 - 支持“一个 session 关联多个 execution”
 
@@ -101,7 +101,7 @@
 
 #### 约束
 
-- 审计最终落点必须是 PostgreSQL
+- 审计最终落点必须是 SQLite（同库）
 - 中风险补审计的最终成功与失败都必须能由该组件反映
 
 ### 3.6 PlanningGateAssembler
@@ -263,7 +263,7 @@ Step 10: PayloadRedactor 确认对外最小暴露后返回
    - pre-execution persistence barrier
    - envelope assembler
 3. `biz_execute` 需要从“直接 json.dumps 平铺 payload”转为“envelope 主输出 + 极少数 alias”。
-4. session 持久化要从 `openharness.services.session_storage` 的文件路径迁移到 PostgreSQL 主线。
+4. session 持久化要从 `openharness.services.session_storage` 的旧 JSON/文件路径迁移到 SQLite 主线。
 5. 错误处理与审计推进要引入稳定状态字段，而不是继续依赖 `audit_event_count` 的单一数值表达。
 
 ## 7. 本阶段逻辑组件结论

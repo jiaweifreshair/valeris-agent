@@ -5,7 +5,7 @@
 本文件把 `UOW-1 - Architecture Boundary And Core Contract` 已批准的 NFR Requirements 落成可执行的设计模式。
 这些模式直接服务于以下目标：
 
-- 让 `execution / task / outcome / audit / session` 的 PostgreSQL 主线具备可实现的结构
+- 让 `execution / task / outcome / audit / session` 的 SQLite 主线具备可实现的结构
 - 让 `fail-closed`、高风险同步审计、中风险可追踪补审计具备明确落地方式
 - 让 `DecisionExecutionEnvelope` 成为唯一主 contract，同时保持最小兼容窗口
 - 让安全与性能约束在设计层被前置吸收，而不是等到实现阶段临时补丁
@@ -14,7 +14,7 @@
 
 本文件基于以下已确认答案收束：
 
-1. PostgreSQL 主存储逻辑建模：选择 `C`
+1. SQLite 主存储逻辑建模：选择 `C`
    - `execution / session / task / outcome / audit` 全部采用更明确的显式结构表
 2. fail-closed 持久化屏障：选择 `B`
    - 先在内存中完成 planning / gate，再在进入真实 scenario 前做一次集中落库；集中落库失败则阻断
@@ -173,7 +173,7 @@
 
 #### 模式定义
 
-1. 对进入 PostgreSQL 的 execution payload、audit payload 执行默认脱敏。
+1. 对进入 SQLite 的 execution payload、audit payload 执行默认脱敏。
 2. 默认长期持久化内容应为：
    - 脱敏摘要
    - 原因码
@@ -192,7 +192,7 @@
 
 #### 目标
 
-把 PostgreSQL 访问与错误语义都收束到一致的最小边界。
+把 SQLite 访问与错误语义都收束到一致的最小边界。
 
 #### 模式定义
 
@@ -229,7 +229,7 @@
 
 - 允许 planning / gate 在内存中完成
 - 不允许为了追求极限性能而取消集中落库屏障
-- 不允许通过恢复文件 / 内存回退绕过 PostgreSQL 主线
+- 不允许通过恢复文件 / 内存回退绕过 SQLite 主线
 
 ## 5. 模式间协同关系
 

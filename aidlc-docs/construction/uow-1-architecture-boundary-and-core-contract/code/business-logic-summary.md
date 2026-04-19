@@ -38,7 +38,7 @@
 
 ### 4. fail-closed 在 scenario 之前发生
 - `PreExecutionPersistenceBarrier` 在真实 scenario 前完成 session / execution / audit 的集中持久化。
-- PostgreSQL 不可用、关键写入失败或 barrier 分类为基础设施故障时，主流程直接 fail-closed。
+- SQLite 不可用/不可写、关键写入失败或 barrier 分类为基础设施故障时，主流程直接 fail-closed。
 - 中风险 degraded 路径先把 `audit_status` 置为 `pending`，随后由主流程继续推进为 `persisted` 或 `failed`。
 
 ### 5. envelope-first 输出统一
@@ -71,5 +71,5 @@
 - operator trace 摘要进入 audit payload
 
 ## 剩余风险
-- PostgreSQL 真实集成路径依赖 `VELARIS_TEST_POSTGRES_DSN`，未配置时相关集成用例会跳过。
+- SQLite 持久化依赖工作区可写权限；若运行在只读目录，需要在执行前显式阻断并给出可操作提示。
 - 当前 scenario profile 风险仍为编排层内联实现；后续若场景数量继续增加，建议再抽离为独立 `effective risk assessor` 组件。
