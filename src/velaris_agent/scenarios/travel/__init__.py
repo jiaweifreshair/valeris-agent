@@ -1,6 +1,6 @@
 """商旅场景导出。"""
 
-from velaris_agent.scenarios.travel.protocol import (
+from velaris_agent.scenarios.travel_protocol import (
     TravelAuditTrace,
     TravelCompareResult,
     TravelIntentSlots,

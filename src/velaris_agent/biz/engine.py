@@ -31,7 +31,7 @@ from velaris_agent.scenarios.procurement.types import (
     ProcurementOption,
     ProcurementWorkflowStatus,
 )
-from velaris_agent.scenarios.travel.protocol import (
+from velaris_agent.scenarios.travel_protocol import (
     TravelAuditTrace,
     TravelCompareResult,
     TravelIntentSlots,
