@@ -74,11 +74,13 @@ class SecuritySettings(BaseModel):
 class StorageSettings(BaseModel):
     """存储后端配置。
 
-    这组配置只负责描述 PostgreSQL bootstrap 所需的连接与调度参数，
-    便于后续任务在不引入额外基础设施的前提下复用同一份设置。
+    Velaris 主线使用项目内 SQLite 数据库（默认路径：<project>/.velaris-agent/velaris.db），
+    因此这里不再暴露 PostgreSQL DSN 等外部依赖配置。
+
+    该配置只保留“可选目录 + worker 调度参数”这类与数据库实现无关的设置，
+    便于后续扩展后台任务或证据附件落盘策略。
     """
 
-    postgres_dsn: str = ""
     evidence_dir: str | None = None
     job_poll_interval_seconds: float = 2.0
     job_max_attempts: int = 3
@@ -197,10 +199,6 @@ def _apply_env_overrides(settings: Settings) -> Settings:
     )
     if auto_compact_threshold_tokens:
         updates["auto_compact_threshold_tokens"] = int(auto_compact_threshold_tokens)
-
-    postgres_dsn = os.environ.get("VELARIS_POSTGRES_DSN")
-    if postgres_dsn:
-        storage_updates["postgres_dsn"] = postgres_dsn
 
     evidence_dir = os.environ.get("VELARIS_EVIDENCE_DIR")
     if evidence_dir:

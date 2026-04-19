@@ -311,56 +311,40 @@ def test_cli_storage_init_bootstraps_schema(tmp_path, monkeypatch):
     """storage init 应调用 schema bootstrap 并输出执行条数。"""
 
     monkeypatch.setenv("OPENHARNESS_CONFIG_DIR", str(tmp_path / "config"))
-    from openharness.config import Settings, save_settings
-
-    save_settings(Settings(storage={"postgres_dsn": "postgresql://user:pass@localhost:5432/velaris"}))
+    monkeypatch.chdir(tmp_path)
     runner = CliRunner()
 
     called = {}
 
-    def fake_bootstrap_schema(dsn: str) -> int:
-        called["dsn"] = dsn
+    def fake_bootstrap_sqlite_schema(database_path) -> int:
+        called["database_path"] = str(database_path)
         return 6
 
-    monkeypatch.setattr("velaris_agent.persistence.schema.bootstrap_schema", fake_bootstrap_schema)
+    monkeypatch.setattr(
+        "velaris_agent.persistence.schema.bootstrap_sqlite_schema",
+        fake_bootstrap_sqlite_schema,
+    )
 
     result = runner.invoke(app, ["storage", "init"])
 
     assert result.exit_code == 0
-    assert called["dsn"] == "postgresql://user:pass@localhost:5432/velaris"
+    assert called["database_path"] == str(tmp_path / ".velaris-agent" / "velaris.db")
     assert "Storage initialized: 6 statements applied" in result.output
-
-
-def test_cli_storage_init_requires_postgres_dsn(tmp_path, monkeypatch):
-    """storage init 在未配置 dsn 时应失败。"""
-
-    monkeypatch.setenv("OPENHARNESS_CONFIG_DIR", str(tmp_path / "config"))
-    from openharness.config import Settings, save_settings
-
-    save_settings(Settings())
-    runner = CliRunner()
-
-    result = runner.invoke(app, ["storage", "init"])
-
-    assert result.exit_code != 0
-    assert "PostgreSQL DSN is required" in result.output
 
 
 def test_cli_storage_jobs_run_once(tmp_path, monkeypatch):
     """storage jobs run-once 应调用 worker 并输出处理数量。"""
 
     monkeypatch.setenv("OPENHARNESS_CONFIG_DIR", str(tmp_path / "config"))
-    from openharness.config import Settings, save_settings
-
-    save_settings(Settings(storage={"postgres_dsn": "postgresql://user:pass@localhost:5432/velaris"}))
+    monkeypatch.chdir(tmp_path)
     runner = CliRunner()
 
     called = {}
 
-    def fake_run_jobs_once(dsn: str, limit: int) -> int:
+    def fake_run_jobs_once(database_path: str, limit: int) -> int:
         """记录 CLI 传给 worker 的参数，并返回稳定的处理数。"""
 
-        called["dsn"] = dsn
+        called["database_path"] = database_path
         called["limit"] = limit
         return 2
 
@@ -370,7 +354,19 @@ def test_cli_storage_jobs_run_once(tmp_path, monkeypatch):
 
     assert result.exit_code == 0
     assert called == {
-        "dsn": "postgresql://user:pass@localhost:5432/velaris",
+        "database_path": str(tmp_path / ".velaris-agent" / "velaris.db"),
         "limit": 5,
     }
     assert "processed: 2" in result.output
+
+
+def test_cli_storage_doctor_reports_missing_storage(tmp_path, monkeypatch):
+    """storage doctor 在未初始化时应提示并返回非 0。"""
+
+    monkeypatch.chdir(tmp_path)
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["storage", "doctor"])
+
+    assert result.exit_code != 0
+    assert "Storage is not initialized" in result.output

@@ -36,7 +36,7 @@ provider_app = typer.Typer(name="provider", help="管理 provider 预设（list/
 plugin_app = typer.Typer(name="plugin", help="管理插件")
 auth_app = typer.Typer(name="auth", help="管理 provider 感知的鉴权状态")
 demo_app = typer.Typer(name="demo", help="运行本地内置 Demo")
-storage_app = typer.Typer(name="storage", help="管理存储后端（PostgreSQL bootstrap）")
+storage_app = typer.Typer(name="storage", help="管理项目内 SQLite 存储（bootstrap/doctor/jobs）")
 storage_jobs_app = typer.Typer(name="jobs", help="运行最小后台任务 worker")
 
 app.add_typer(mcp_app)
@@ -508,19 +508,69 @@ def demo_lifegoal(
 
 @storage_app.command("init")
 def storage_init() -> None:
-    """初始化 PostgreSQL 存储 schema。"""
+    """初始化项目内 SQLite 存储 schema。"""
 
-    from openharness.config import load_settings
-    from velaris_agent.persistence.schema import bootstrap_schema
+    from openharness.config.paths import get_project_database_path
+    from velaris_agent.persistence.schema import bootstrap_sqlite_schema
 
-    settings = load_settings()
-    dsn = settings.storage.postgres_dsn.strip()
-    if not dsn:
-        print("PostgreSQL DSN is required for storage init.", file=sys.stderr)
+    database_path = get_project_database_path(Path.cwd())
+
+    count = bootstrap_sqlite_schema(database_path)
+    print(f"Storage initialized: {count} statements applied")
+
+
+@storage_app.command("doctor")
+def storage_doctor() -> None:
+    """检查当前项目 SQLite 存储是否可用且 schema 完整。"""
+
+    from openharness.config.paths import get_project_database_path
+    from velaris_agent.persistence.schema import EXPECTED_TABLES
+
+    database_path = get_project_database_path(Path.cwd())
+    base_dir = database_path.parent
+    database_exists = database_path.exists()
+    base_dir_exists = base_dir.exists()
+
+    lines: list[str] = [
+        f"project_dir: {Path.cwd().resolve()}",
+        f"base_dir: {base_dir} ({'present' if base_dir_exists else 'missing'})",
+        f"database: {database_path} ({'present' if database_exists else 'missing'})",
+    ]
+
+    if not database_exists:
+        lines.append("")
+        lines.append("Storage is not initialized. Run: velaris storage init")
+        print("\n".join(lines))
         raise typer.Exit(1)
 
-    count = bootstrap_schema(dsn)
-    print(f"Storage initialized: {count} statements applied")
+    # 只读检查：避免在 doctor 中触发 WAL/SHM 写入或创建新库。
+    import sqlite3
+
+    try:
+        connection = sqlite3.connect(f"file:{database_path}?mode=ro", uri=True)
+    except sqlite3.Error as exc:
+        lines.append("")
+        lines.append(f"storage_unavailable: {exc}")
+        print("\n".join(lines))
+        raise typer.Exit(1) from exc
+
+    try:
+        rows = connection.execute("select name from sqlite_master where type='table'").fetchall()
+    finally:
+        connection.close()
+
+    existing_tables = {str(row[0]) for row in rows}
+    missing_tables = [name for name in EXPECTED_TABLES if name not in existing_tables]
+    if missing_tables:
+        lines.append(f"schema: incomplete (missing {len(missing_tables)} tables)")
+        lines.append("missing_tables: " + ", ".join(missing_tables))
+        lines.append("")
+        lines.append("Run: velaris storage init")
+        print("\n".join(lines))
+        raise typer.Exit(1)
+
+    lines.append("schema: ok")
+    print("\n".join(lines))
 
 
 @storage_jobs_app.command("run-once")
@@ -529,16 +579,11 @@ def storage_jobs_run_once(
 ) -> None:
     """执行一次数据库任务队列轮询。"""
 
-    from openharness.config import load_settings
+    from openharness.config.paths import get_project_database_path
     from velaris_agent.persistence.job_queue import run_jobs_once
 
-    settings = load_settings()
-    dsn = settings.storage.postgres_dsn.strip()
-    if not dsn:
-        print("PostgreSQL DSN is required for storage jobs run-once.", file=sys.stderr)
-        raise typer.Exit(1)
-
-    processed = run_jobs_once(dsn, limit=limit)
+    database_path = get_project_database_path(Path.cwd())
+    processed = run_jobs_once(str(database_path), limit=limit)
     print(f"processed: {processed}")
 
 

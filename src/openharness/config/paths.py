@@ -147,3 +147,16 @@ def get_project_issue_file(cwd: str | Path) -> Path:
 def get_project_pr_comments_file(cwd: str | Path) -> Path:
     """Return the per-project PR comments context file."""
     return get_project_config_dir(cwd) / "pr_comments.md"
+
+
+def get_project_database_path(cwd: str | Path) -> Path:
+    """返回项目内 SQLite 数据库文件路径。
+
+    约定：<project>/.velaris-agent/velaris.db
+
+    注意：该函数只负责计算路径，不负责创建目录或初始化 schema；
+    目录创建与 schema bootstrap 由 `velaris_agent.persistence.sqlite_connection`
+    / `velaris_agent.persistence.schema.bootstrap_sqlite_schema` 统一处理。
+    """
+
+    return Path(cwd).resolve() / _DEFAULT_BASE_DIR / "velaris.db"

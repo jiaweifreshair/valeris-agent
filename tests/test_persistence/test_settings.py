@@ -12,7 +12,7 @@ def test_storage_settings_defaults():
 
     settings = Settings()
 
-    assert settings.storage.postgres_dsn == ""
+    assert not hasattr(settings.storage, "postgres_dsn")
     assert settings.storage.evidence_dir is None
     assert settings.storage.job_poll_interval_seconds == 2.0
     assert settings.storage.job_max_attempts == 3
@@ -23,10 +23,10 @@ def test_load_settings_applies_storage_env_overrides(tmp_path: Path, monkeypatch
 
     path = tmp_path / "settings.json"
     path.write_text("{}", encoding="utf-8")
-    monkeypatch.setenv("VELARIS_POSTGRES_DSN", "postgresql://user:pass@localhost:5432/velaris")
     monkeypatch.setenv("VELARIS_EVIDENCE_DIR", str(tmp_path / "evidence"))
+    monkeypatch.setenv("VELARIS_POSTGRES_DSN", "postgresql://ignored")
 
     settings = load_settings(path)
 
-    assert settings.storage.postgres_dsn == "postgresql://user:pass@localhost:5432/velaris"
+    assert not hasattr(settings.storage, "postgres_dsn")
     assert settings.storage.evidence_dir == str(tmp_path / "evidence")
