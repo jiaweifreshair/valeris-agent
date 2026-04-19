@@ -25,6 +25,7 @@ from openharness.state import AppState, AppStateStore
 from openharness.tasks import get_task_manager
 from openharness.tools import create_default_tool_registry
 from velaris_agent.persistence.schema import bootstrap_sqlite_schema
+from velaris_agent.velaris.orchestrator import VelarisBizOrchestrator
 
 
 class FakeApiClient:
@@ -66,6 +67,22 @@ def _make_context(tmp_path: Path) -> CommandContext:
             )
         ),
     )
+
+
+class BrokenAuditStore:
+    """用于命令测试的失败审计仓储。"""
+
+    def append_event(
+        self,
+        session_id: str,
+        step_name: str,
+        operator_id: str,
+        payload: dict[str, object] | None = None,
+    ) -> None:
+        """稳定制造 repair 所需的 failed audit_status。"""
+
+        del session_id, step_name, operator_id, payload
+        raise RuntimeError("audit down")
 
 
 @pytest.mark.asyncio
@@ -429,6 +446,61 @@ async def test_agents_session_files_and_reload_plugins_commands(tmp_path: Path, 
     waiter = manager._waiters.get(task.id)  # type: ignore[attr-defined]
     if waiter is not None:
         await asyncio.wait_for(waiter, timeout=5)
+
+
+@pytest.mark.asyncio
+async def test_execution_repair_command_updates_failed_audit_status(tmp_path: Path, monkeypatch):
+    """`/execution repair` 应能修复 failed execution 的审计状态。"""
+
+    monkeypatch.setenv("OPENHARNESS_CONFIG_DIR", str(tmp_path / "config"))
+    monkeypatch.setenv("OPENHARNESS_DATA_DIR", str(tmp_path / "data"))
+    registry = create_default_command_registry()
+    context = _make_context(tmp_path)
+
+    orchestrator = VelarisBizOrchestrator(audit_store=BrokenAuditStore(), cwd=tmp_path)
+    created = orchestrator.execute(
+        query="我收到了两个 offer，一个薪资更高，一个成长更强，帮我做人生目标决策",
+        payload={
+            "domain": "career",
+            "risk_tolerance": "moderate",
+            "constraints": ["一年内希望带团队", "不希望长期 996"],
+            "options": [
+                {
+                    "id": "offer-a",
+                    "label": "Offer A：高薪成熟岗",
+                    "dimensions": {
+                        "growth": 0.56,
+                        "income": 0.93,
+                        "fulfillment": 0.61,
+                        "stability": 0.82,
+                        "balance": 0.38,
+                    },
+                },
+                {
+                    "id": "offer-b",
+                    "label": "Offer B：成长型核心岗",
+                    "dimensions": {
+                        "growth": 0.95,
+                        "income": 0.71,
+                        "fulfillment": 0.9,
+                        "stability": 0.68,
+                        "balance": 0.79,
+                    },
+                },
+            ],
+        },
+        session_id="session-exec-repair-command",
+    )
+    execution_id = str(created["envelope"]["execution"]["execution_id"])
+
+    command, args = registry.lookup(f"/execution repair {execution_id}")
+    assert command is not None
+
+    result = await command.handler(args, context)
+
+    assert "Execution repaired:" in result.message
+    assert execution_id in result.message
+    assert "failed -> persisted" in result.message
 
 
 @pytest.mark.asyncio

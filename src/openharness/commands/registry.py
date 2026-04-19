@@ -508,8 +508,24 @@ def create_default_command_registry() -> CommandRegistry:
         action = tokens[0] if tokens else "ls"
 
         from velaris_agent.velaris.execution_recall import ExecutionRecallService
+        from velaris_agent.velaris.execution_repair import ExecutionRepairService
 
         service = ExecutionRecallService(cwd=context.cwd)
+        repair_service = ExecutionRepairService(cwd=context.cwd)
+
+        if action == "repair":
+            if len(tokens) != 2:
+                return CommandResult(message="Usage: /execution repair <execution_id>")
+            execution_id = tokens[1].strip()
+            repaired = repair_service.repair_execution(execution_id)
+            return CommandResult(
+                message=(
+                    "Execution repaired:\n"
+                    f"  {execution_id}\n"
+                    f"  audit_status: {repaired['audit_status_before']} -> {repaired['audit_status_after']}\n"
+                    f"  events_appended: {repaired['events_appended']}"
+                )
+            )
 
         if action == "show" and len(tokens) == 2:
             execution_id = tokens[1].strip()
