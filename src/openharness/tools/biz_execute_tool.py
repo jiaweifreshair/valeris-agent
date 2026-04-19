@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from openharness.tools.base import BaseTool, ToolExecutionContext, ToolResult
 from velaris_agent.velaris.orchestrator import VelarisBizOrchestrator
+from velaris_agent.velaris.execution_contract import DecisionExecutionRequest
 
 
 class BizExecuteToolInput(BaseModel):
@@ -30,21 +31,28 @@ class BizExecuteTool(BaseTool):
 
     def is_read_only(self, arguments: BizExecuteToolInput) -> bool:
         del arguments
-        return True
+        # biz_execute 会写入 task/outcome/audit/session 等运行时记录，因此不能标记为只读。
+        return False
 
     async def execute(self, arguments: BizExecuteToolInput, context: ToolExecutionContext) -> ToolResult:
         orchestrator = context.metadata.get("velaris_orchestrator")
         if not isinstance(orchestrator, VelarisBizOrchestrator):
-            orchestrator = VelarisBizOrchestrator()
+            orchestrator = VelarisBizOrchestrator(cwd=context.cwd)
 
         try:
-            payload = orchestrator.execute(
-                query=arguments.query,
-                payload=arguments.payload,
-                constraints=arguments.constraints,
-                scenario=arguments.scenario,
-                session_id=arguments.session_id,
+            payload = orchestrator.execute_request(
+                DecisionExecutionRequest(
+                    query=arguments.query,
+                    payload=arguments.payload,
+                    constraints=arguments.constraints,
+                    scenario_hint=arguments.scenario,
+                    session_id=arguments.session_id,
+                )
             )
         except RuntimeError as exc:
-            return ToolResult(output=str(exc), is_error=True)
+            error_payload = exc.args[0] if exc.args and isinstance(exc.args[0], dict) else {"error": str(exc)}
+            return ToolResult(
+                output=json.dumps(error_payload, ensure_ascii=False, sort_keys=True),
+                is_error=True,
+            )
         return ToolResult(output=json.dumps(payload, ensure_ascii=False, sort_keys=True))

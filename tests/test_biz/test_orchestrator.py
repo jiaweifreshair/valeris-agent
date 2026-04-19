@@ -157,6 +157,40 @@ def test_orchestrator_executes_tokencost_flow_with_runtime_controls(tmp_path: Pa
     assert len(orchestrator.outcome_store.list_by_session("session-token")) == 1
 
 
+def test_orchestrator_persists_session_snapshot_with_correct_cwd_for_resume(tmp_path: Path) -> None:
+    """session snapshot 必须写入正确 cwd，避免 /resume 无法按工作区检索。"""
+
+    orchestrator = VelarisBizOrchestrator(cwd=tmp_path)
+    session_id = "session-cwd-snapshot"
+
+    orchestrator.execute(
+        query="我每月 OpenAI 成本 2000 美元，想降到 800",
+        constraints={"target_monthly_cost": 800},
+        payload={
+            "current_monthly_cost": 2000,
+            "target_monthly_cost": 800,
+            "suggestions": [
+                {
+                    "id": "switch-tier",
+                    "title": "分层路由",
+                    "estimated_saving": 900,
+                    "quality_retention": 0.88,
+                    "execution_speed": 0.9,
+                    "effort": "medium",
+                }
+            ],
+        },
+        session_id=session_id,
+    )
+
+    repository = orchestrator.session_repository
+    assert repository is not None
+    stored = repository.get(session_id)
+    assert stored is not None
+    assert stored.snapshot_json["cwd"] == str(tmp_path.resolve())
+    assert repository.latest_by_cwd(str(tmp_path.resolve())).session_id == session_id
+
+
 def test_orchestrator_executes_robotclaw_flow_with_strict_governance():
     class InMemoryAuditStore:
         """用于严格治理场景的最小审计仓储。"""

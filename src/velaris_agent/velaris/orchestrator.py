@@ -70,6 +70,8 @@ class VelarisBizOrchestrator:
     ) -> None:
         """初始化编排器及其依赖。"""
         resolved_cwd = Path(cwd).resolve() if cwd is not None else Path.cwd().resolve()
+        # 统一将 cwd 作为编排器的运行语义输入，而不是由桥接层或调用方随意推导。
+        self.cwd = resolved_cwd
         if sqlite_database_path is not None and str(sqlite_database_path).strip():
             resolved_sqlite_path = str(sqlite_database_path)
         else:
@@ -105,6 +107,17 @@ class VelarisBizOrchestrator:
                 failure_classifier=self.failure_classifier,
             )
 
+    def execute_request(self, request: DecisionExecutionRequest) -> dict[str, Any]:
+        """标准化 request 入口：OpenHarness 只负责提交请求并接收统一执行包络。"""
+
+        return self.execute(
+            query=request.query,
+            payload=dict(request.payload),
+            constraints=dict(request.constraints),
+            scenario=request.scenario_hint,
+            session_id=request.session_id,
+        )
+
     def execute(
         self,
         query: str,
@@ -114,7 +127,8 @@ class VelarisBizOrchestrator:
         session_id: str | None = None,
     ) -> dict[str, Any]:
         """执行一次完整的 Velaris 业务闭环。"""
-        resolved_session_id = session_id or f"session-{uuid4().hex[:12]}"
+        normalized_session_id = session_id.strip() if session_id and session_id.strip() else None
+        resolved_session_id = normalized_session_id or f"session-{uuid4().hex[:12]}"
         request = DecisionExecutionRequest(
             query=query,
             payload=payload,
@@ -125,7 +139,7 @@ class VelarisBizOrchestrator:
         stakeholder_map = _resolve_stakeholder_map(payload)
         plan = build_capability_plan(
             query=query,
-            constraints=constraints,
+            constraints=dict(request.constraints),
             scenario=scenario,
             stakeholder_map=stakeholder_map,
         )
@@ -221,7 +235,7 @@ class VelarisBizOrchestrator:
                     request=request,
                     execution=execution,
                     gate_decision=gate_decision,
-                    session_snapshot={"cwd": resolved_session_id, "query": query},
+                    session_snapshot={"cwd": str(self.cwd), "query": query},
                     execution_snapshot={
                         "plan": plan,
                         "routing": routing.to_dict(),

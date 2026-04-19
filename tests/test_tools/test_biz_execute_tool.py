@@ -15,12 +15,10 @@ from openharness.velaris.orchestrator import VelarisBizOrchestrator
 @pytest.mark.asyncio
 async def test_biz_execute_tool_runs_full_tokencost_flow(tmp_path: Path):
     registry = create_default_tool_registry()
-    orchestrator = VelarisBizOrchestrator()
     context = ToolExecutionContext(
         cwd=tmp_path,
         metadata={
             "tool_registry": registry,
-            "velaris_orchestrator": orchestrator,
         },
     )
 
@@ -68,17 +66,16 @@ async def test_biz_execute_tool_runs_full_tokencost_flow(tmp_path: Path):
     assert payload["envelope"]["execution"]["gate_status"] == "allowed"
     assert payload["envelope"]["tasks"][0]["status"] == "completed"
     assert payload["outcome"]["success"] is True
+    assert (tmp_path / ".velaris-agent" / "velaris.db").exists()
 
 
 @pytest.mark.asyncio
 async def test_biz_execute_tool_runs_full_lifegoal_flow(tmp_path: Path):
     registry = create_default_tool_registry()
-    orchestrator = VelarisBizOrchestrator()
     context = ToolExecutionContext(
         cwd=tmp_path,
         metadata={
             "tool_registry": registry,
-            "velaris_orchestrator": orchestrator,
         },
     )
 
@@ -133,3 +130,62 @@ async def test_biz_execute_tool_runs_full_lifegoal_flow(tmp_path: Path):
     assert payload["envelope"]["execution"]["gate_status"] == "degraded"
     assert payload["envelope"]["tasks"][0]["status"] == "completed"
     assert payload["outcome"]["success"] is True
+    assert (tmp_path / ".velaris-agent" / "velaris.db").exists()
+
+
+@pytest.mark.asyncio
+async def test_biz_execute_tool_returns_json_error_payload_when_orchestrator_raises(tmp_path: Path):
+    """当 orchestrator fail-closed 时，工具层必须返回可解析的 JSON 包络。"""
+
+    class BrokenAuditStore:
+        def append_event(
+            self,
+            session_id: str,
+            step_name: str,
+            operator_id: str,
+            payload: dict[str, object] | None = None,
+        ) -> None:
+            raise RuntimeError(f"audit down: {step_name}")
+
+    registry = create_default_tool_registry()
+    orchestrator = VelarisBizOrchestrator(audit_store=BrokenAuditStore(), cwd=tmp_path)
+    context = ToolExecutionContext(
+        cwd=tmp_path,
+        metadata={
+            "tool_registry": registry,
+            "velaris_orchestrator": orchestrator,
+        },
+    )
+
+    biz_execute = registry.get("biz_execute")
+    assert biz_execute is not None
+
+    result = await biz_execute.execute(
+        biz_execute.input_model(
+            query="为 robotaxi 派单生成服务提案并形成交易合约",
+            constraints={"requires_audit": True},
+            payload={
+                "max_budget_cny": 200000,
+                "proposals": [
+                    {
+                        "id": "dispatch-a",
+                        "price_cny": 180000,
+                        "eta_minutes": 22,
+                        "safety_score": 0.95,
+                        "compliance_score": 0.95,
+                        "available": True,
+                    }
+                ],
+            },
+            session_id="session-tool-error",
+        ),
+        context,
+    )
+
+    assert result.is_error is True
+    payload = json.loads(result.output)
+    assert set(payload.keys()) == {"audit_event_count", "envelope", "outcome", "result", "session_id"}
+    assert payload["envelope"]["execution"]["execution_status"] == "blocked"
+    assert payload["envelope"]["execution"]["gate_status"] == "denied"
+    assert payload["outcome"]["success"] is False
+    assert "audit trail required" in payload["outcome"]["summary"]
