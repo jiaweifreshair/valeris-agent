@@ -10,7 +10,12 @@ import pytest
 
 import openharness.commands.registry as registry_module
 from openharness.commands.registry import CommandContext, create_default_command_registry
-from openharness.config.paths import get_feedback_log_path, get_project_issue_file, get_project_pr_comments_file
+from openharness.config.paths import (
+    get_feedback_log_path,
+    get_project_database_path,
+    get_project_issue_file,
+    get_project_pr_comments_file,
+)
 from openharness.config.settings import load_settings, save_settings, Settings
 from openharness.engine.messages import ConversationMessage, TextBlock
 from openharness.engine.query_engine import QueryEngine
@@ -19,6 +24,7 @@ from openharness.permissions import PermissionChecker
 from openharness.state import AppState, AppStateStore
 from openharness.tasks import get_task_manager
 from openharness.tools import create_default_tool_registry
+from velaris_agent.persistence.schema import bootstrap_sqlite_schema
 
 
 class FakeApiClient:
@@ -368,23 +374,23 @@ async def test_agents_session_files_and_reload_plugins_commands(tmp_path: Path, 
     context = _make_context(tmp_path)
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "app.py").write_text("print('hi')\n", encoding="utf-8")
+    bootstrap_sqlite_schema(get_project_database_path(tmp_path))
 
     session_command, session_args = registry.lookup("/session")
     session_result = await session_command.handler(session_args, context)
-    assert "Session directory:" in session_result.message
+    assert "SQLite database:" in session_result.message
 
     session_path_command, session_path_args = registry.lookup("/session path")
     session_path_result = await session_path_command.handler(session_path_args, context)
-    assert "sessions" in session_path_result.message
+    assert ".velaris-agent" in session_path_result.message
+    assert "velaris.db" in session_path_result.message
 
     session_tag_command, session_tag_args = registry.lookup("/session tag smoke")
     session_tag_result = await session_tag_command.handler(session_tag_args, context)
-    assert "smoke.json" in session_tag_result.message
     assert "smoke.md" in session_tag_result.message
 
     tag_command, tag_args = registry.lookup("/tag alias-smoke")
     tag_result = await tag_command.handler(tag_args, context)
-    assert "alias-smoke.json" in tag_result.message
     assert "alias-smoke.md" in tag_result.message
 
     files_command, files_args = registry.lookup("/files app.py")

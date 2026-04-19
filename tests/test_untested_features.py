@@ -384,10 +384,17 @@ async def test_session_storage():
         save_session_snapshot, load_session_snapshot,
         list_session_snapshots, load_session_by_id, export_session_markdown,
     )
+    from openharness.config.paths import get_project_database_path
     from openharness.engine.messages import ConversationMessage, TextBlock
     from openharness.api.usage import UsageSnapshot
+    from velaris_agent.persistence.schema import bootstrap_sqlite_schema
+    import os
+    from pathlib import Path
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        os.environ["OPENHARNESS_DATA_DIR"] = str(Path(tmpdir) / "data")
+        bootstrap_sqlite_schema(get_project_database_path(tmpdir))
+
         messages = [
             ConversationMessage.from_user_text("Hello, analyze this code"),
             ConversationMessage(role="assistant", content=[TextBlock(text="I'll read the file first.")]),
@@ -397,11 +404,11 @@ async def test_session_storage():
         usage = UsageSnapshot(input_tokens=500, output_tokens=200)
 
         # Save
-        path = save_session_snapshot(
+        session_id = save_session_snapshot(
             cwd=tmpdir, model=MODEL, system_prompt="Test prompt",
             messages=messages, usage=usage, session_id="test-session-123",
         )
-        print(f"  Saved to: {path}")
+        print(f"  Saved session: {session_id}")
 
         # List
         snapshots = list_session_snapshots(tmpdir)
@@ -421,7 +428,7 @@ async def test_session_storage():
         print(f"  Exported markdown: {len(md_content)} chars")
 
         return (
-            path.exists()
+            session_id == "test-session-123"
             and len(snapshots) >= 1
             and loaded is not None
             and loaded.get("model") == MODEL

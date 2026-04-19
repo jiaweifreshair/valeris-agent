@@ -341,14 +341,18 @@ async def handle_line(
     )
     async for event in bundle.engine.submit_message(submitted_line):
         await render_event(event)
-    save_session_snapshot(
-        cwd=bundle.cwd,
-        model=settings.model,
-        system_prompt=build_runtime_system_prompt(settings, cwd=bundle.cwd, latest_user_prompt=line),
-        messages=bundle.engine.messages,
-        usage=bundle.engine.total_usage,
-        session_id=bundle.session_id,
-    )
+    try:
+        save_session_snapshot(
+            cwd=bundle.cwd,
+            model=settings.model,
+            system_prompt=build_runtime_system_prompt(settings, cwd=bundle.cwd, latest_user_prompt=line),
+            messages=bundle.engine.messages,
+            usage=bundle.engine.total_usage,
+            session_id=bundle.session_id,
+        )
+    except Exception as exc:
+        # SQLite 主线不再写 JSON session 文件，因此若数据库未初始化需要明确提示用户。
+        await print_system(f"Session persistence failed: {exc}\nRun: velaris storage init")
     sync_app_state(bundle)
     return True
 

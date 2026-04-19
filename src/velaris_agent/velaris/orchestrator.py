@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, Protocol
 from uuid import uuid4
 
-from openharness.config.settings import load_settings
 from velaris_agent.biz.engine import build_capability_plan, run_scenario
 from velaris_agent.memory.types import StakeholderMapModel
 from velaris_agent.persistence.factory import (
@@ -65,26 +65,35 @@ class VelarisBizOrchestrator:
         execution_repository: Any | None = None,
         persistence_barrier: PreExecutionPersistenceBarrier | None = None,
         failure_classifier: PersistenceFailureClassifier | None = None,
-        postgres_dsn: str | None = None,
+        cwd: str | Path | None = None,
+        sqlite_database_path: str | Path | None = None,
     ) -> None:
         """初始化编排器及其依赖。"""
-        resolved_postgres_dsn = postgres_dsn
-        if resolved_postgres_dsn is None:
-            resolved_postgres_dsn = load_settings().storage.postgres_dsn.strip()
+        resolved_cwd = Path(cwd).resolve() if cwd is not None else Path.cwd().resolve()
+        if sqlite_database_path is not None and str(sqlite_database_path).strip():
+            resolved_sqlite_path = str(sqlite_database_path)
+        else:
+            from velaris_agent.persistence.sqlite_helpers import get_project_database_path
+
+            resolved_sqlite_path = str(get_project_database_path(resolved_cwd))
         self.router = router or PolicyRouter()
         self.authority_service = authority_service or AuthorityService()
-        self.task_ledger = task_ledger or build_task_ledger(resolved_postgres_dsn)
-        self.outcome_store = outcome_store or build_outcome_store(resolved_postgres_dsn)
-        self.audit_store = audit_store if audit_store is not None else build_audit_store(resolved_postgres_dsn)
+        self.task_ledger = task_ledger or build_task_ledger(sqlite_database_path=resolved_sqlite_path)
+        self.outcome_store = outcome_store or build_outcome_store(sqlite_database_path=resolved_sqlite_path)
+        self.audit_store = (
+            audit_store
+            if audit_store is not None
+            else build_audit_store(sqlite_database_path=resolved_sqlite_path)
+        )
         self.session_repository = (
             session_repository
             if session_repository is not None
-            else build_session_repository(resolved_postgres_dsn)
+            else build_session_repository(sqlite_database_path=resolved_sqlite_path)
         )
         self.execution_repository = (
             execution_repository
             if execution_repository is not None
-            else build_execution_repository(resolved_postgres_dsn)
+            else build_execution_repository(sqlite_database_path=resolved_sqlite_path)
         )
         self.failure_classifier = failure_classifier or PersistenceFailureClassifier()
         self.persistence_barrier = persistence_barrier

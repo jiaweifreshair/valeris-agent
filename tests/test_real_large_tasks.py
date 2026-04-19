@@ -376,11 +376,15 @@ async def task_migration_plan_with_memory():
             # Save session
             all_msgs = engine.messages
             usage = engine.total_usage
-            session_path = save_session_snapshot(
+            from openharness.config.paths import get_project_database_path
+            from velaris_agent.persistence.schema import bootstrap_sqlite_schema
+
+            bootstrap_sqlite_schema(get_project_database_path(tmpdir))
+            session_id = save_session_snapshot(
                 cwd=tmpdir, model=MODEL, system_prompt="Plan agent",
                 messages=all_msgs, usage=usage, session_id="migration-plan-001",
             )
-            print(f"  Session saved: {session_path.exists()}")
+            print(f"  Session saved: {session_id}")
 
             # Export markdown
             md_path = export_session_markdown(cwd=tmpdir, messages=all_msgs)
@@ -393,7 +397,7 @@ async def task_migration_plan_with_memory():
 
             ok = (
                 len(mem_files) >= 2
-                and session_path.exists()
+                and session_id == "migration-plan-001"
                 and md_size > 100
                 and len(r3["text"]) > 200
                 and any(kw in r3["text"].lower() for kw in ["migration", "step", "plan", "depend"])
@@ -730,12 +734,16 @@ def handle_create_admin(data):
         print(f"  Turn 3 (verify): {r3['turns']} turns, {len(r3['tools'])} tools")
 
         # Save session
-        session_path = save_session_snapshot(
+        from openharness.config.paths import get_project_database_path
+        from velaris_agent.persistence.schema import bootstrap_sqlite_schema
+
+        bootstrap_sqlite_schema(get_project_database_path(tmpdir))
+        session_id = save_session_snapshot(
             cwd=tmpdir, model=MODEL, system_prompt="Refactoring expert",
             messages=engine.messages, usage=engine.total_usage,
         )
         loaded = load_session_snapshot(tmpdir)
-        print(f"  Session saved: {session_path.exists()}")
+        print(f"  Session saved: {session_id}")
         print(f"  Session loaded: messages={len(loaded.get('messages', []))}")
         print(f"  Cost: in={engine.total_usage.input_tokens}, out={engine.total_usage.output_tokens}")
 
@@ -749,7 +757,7 @@ def handle_create_admin(data):
             valid_python = False
 
         print(f"  Has helper function: {has_helper}, valid Python: {valid_python}")
-        return has_helper and valid_python and session_path.exists()
+        return has_helper and valid_python and bool(session_id)
 
 
 # ====================================================================

@@ -42,10 +42,9 @@ class SelfEvolutionReviewTool(BaseTool):
 
             memory_dir = context.metadata.get("decision_memory_dir")
             report_dir = context.metadata.get("evolution_report_dir")
-            postgres_dsn = context.metadata.get("postgres_dsn", "")
             memory = build_decision_memory(
-                postgres_dsn=postgres_dsn,
                 base_dir=memory_dir,
+                cwd=context.cwd,
             )
             engine = SelfEvolutionEngine(memory=memory, report_dir=report_dir)
 

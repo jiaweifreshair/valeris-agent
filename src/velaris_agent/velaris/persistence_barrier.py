@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Protocol
 
-from velaris_agent.persistence.postgres_execution import SessionRecord
+from velaris_agent.persistence.sqlite_execution import SessionRecord
 from velaris_agent.velaris.execution_contract import (
     BizExecutionRecord,
     DecisionExecutionRequest,

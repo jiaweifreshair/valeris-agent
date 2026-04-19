@@ -47,10 +47,9 @@ class RecallPreferencesTool(BaseTool):
             from velaris_agent.persistence.factory import build_decision_memory
 
             base_dir = context.metadata.get("decision_memory_dir")
-            postgres_dsn = context.metadata.get("postgres_dsn", "")
             memory = build_decision_memory(
-                postgres_dsn=postgres_dsn,
                 base_dir=base_dir,
+                cwd=context.cwd,
             )
             learner = PreferenceLearner(memory)
 

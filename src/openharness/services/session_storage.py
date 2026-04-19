@@ -1,4 +1,8 @@
-"""Session persistence helpers."""
+"""Session persistence helpers.
+
+SQLite 主线：session 快照存储在项目内 SQLite（<project>/.velaris-agent/velaris.db）中。
+旧的 JSON session 文件（latest.json / session-*.json）已彻底停用，不再读写。
+"""
 
 from __future__ import annotations
 
@@ -11,15 +15,18 @@ from typing import Any
 from uuid import uuid4
 
 from openharness.api.usage import UsageSnapshot
-from openharness.config.settings import load_settings
-from openharness.config.paths import get_sessions_dir
+from openharness.config.paths import get_project_database_path, get_sessions_dir
 from openharness.engine.messages import ConversationMessage
 from velaris_agent.persistence.factory import build_session_repository
-from velaris_agent.persistence.postgres_execution import SessionRecord
+from velaris_agent.persistence.sqlite_execution import SessionRecord
 
 
 def get_project_session_dir(cwd: str | Path) -> Path:
-    """Return the session directory for a project."""
+    """返回项目对应的 transcript 导出目录。
+
+    注意：该目录只用于 Markdown transcript 导出，不承载 session snapshot 的正式存储。
+    """
+
     path = Path(cwd).resolve()
     digest = sha1(str(path).encode("utf-8")).hexdigest()[:12]
     session_dir = get_sessions_dir() / f"{path.name}-{digest}"
@@ -27,17 +34,14 @@ def get_project_session_dir(cwd: str | Path) -> Path:
     return session_dir
 
 
-def _load_session_repository():
-    """按当前设置加载 session PostgreSQL 仓储。
+def _load_session_repository(*, cwd: str | Path):
+    """加载项目内 SQLite session 仓储。"""
 
-    该 helper 把“是否启用 PostgreSQL 主线”的判断集中在一处，
-    让 save/load/list 等调用点只关心仓储是否可用，而不重复解析设置。
-    """
-
-    postgres_dsn = load_settings().storage.postgres_dsn.strip()
-    if not postgres_dsn:
-        return None
-    return build_session_repository(postgres_dsn=postgres_dsn)
+    database_path = get_project_database_path(cwd)
+    repository = build_session_repository(sqlite_database_path=database_path)
+    if repository is None:  # pragma: no cover - 工厂异常或未来重构保护
+        raise RuntimeError("session repository unavailable")
+    return repository
 
 
 def _extract_summary(messages: list[ConversationMessage]) -> str:
@@ -47,20 +51,6 @@ def _extract_summary(messages: list[ConversationMessage]) -> str:
         if msg.role == "user" and msg.text.strip():
             return msg.text.strip()[:80]
     return ""
-
-
-def _write_file_snapshot(*, cwd: str | Path, session_id: str, payload: dict[str, Any]) -> Path:
-    """写入文件兼容层，保持现有返回值与本地恢复体验不变。"""
-
-    session_dir = get_project_session_dir(cwd)
-    data = json.dumps(payload, indent=2) + "\n"
-
-    latest_path = session_dir / "latest.json"
-    latest_path.write_text(data, encoding="utf-8")
-
-    session_path = session_dir / f"session-{session_id}.json"
-    session_path.write_text(data, encoding="utf-8")
-    return latest_path
 
 
 def _session_summary_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -91,8 +81,9 @@ def save_session_snapshot(
     messages: list[ConversationMessage],
     usage: UsageSnapshot,
     session_id: str | None = None,
-) -> Path:
-    """Persist a session snapshot. Saves both by ID and as latest."""
+) -> str:
+    """持久化一次 session snapshot，并返回 session_id。"""
+
     sid = session_id or uuid4().hex[:12]
     now = time.time()
     summary = _extract_summary(messages)
@@ -108,127 +99,50 @@ def save_session_snapshot(
         "summary": summary,
         "message_count": len(messages),
     }
-    repository = _load_session_repository()
-    if repository is not None:
-        timestamp = datetime.now(UTC).isoformat()
-        repository.upsert(
-            SessionRecord(
-                session_id=sid,
-                binding_mode="attached",
-                source_runtime="openharness",
-                summary=summary,
-                message_count=len(messages),
-                created_at=timestamp,
-                updated_at=timestamp,
-                snapshot_json=payload,
-            )
-        )
 
-    latest_path = _write_file_snapshot(cwd=cwd, session_id=sid, payload=payload)
-    return latest_path
+    timestamp = datetime.now(UTC).isoformat()
+    repository = _load_session_repository(cwd=cwd)
+    repository.upsert(
+        SessionRecord(
+            session_id=sid,
+            binding_mode="attached",
+            source_runtime="openharness",
+            summary=summary,
+            message_count=len(messages),
+            created_at=timestamp,
+            updated_at=timestamp,
+            snapshot_json=payload,
+        )
+    )
+    return sid
 
 
 def load_session_snapshot(cwd: str | Path) -> dict[str, Any] | None:
     """Load the most recent session snapshot for the project."""
-    repository = _load_session_repository()
-    if repository is not None:
-        record = repository.latest_by_cwd(str(Path(cwd).resolve()))
-        if record is not None:
-            return dict(record.snapshot_json)
-    path = get_project_session_dir(cwd) / "latest.json"
-    if not path.exists():
+    repository = _load_session_repository(cwd=cwd)
+    record = repository.latest_by_cwd(str(Path(cwd).resolve()))
+    if record is None:
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    return dict(record.snapshot_json)
 
 
 def list_session_snapshots(cwd: str | Path, limit: int = 20) -> list[dict[str, Any]]:
     """List saved sessions for the project, newest first."""
-    repository = _load_session_repository()
-    if repository is not None:
-        records = repository.list_by_cwd(str(Path(cwd).resolve()))
-        if records:
-            return [_session_summary_from_payload(dict(record.snapshot_json)) for record in records[:limit]]
-
-    session_dir = get_project_session_dir(cwd)
-    sessions: list[dict[str, Any]] = []
-    seen_ids: set[str] = set()
-
-    # Named session files
-    for path in sorted(session_dir.glob("session-*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-            sid = data.get("session_id", path.stem.replace("session-", ""))
-            seen_ids.add(sid)
-            summary = data.get("summary", "")
-            if not summary:
-                # Extract from first user message
-                for msg in data.get("messages", []):
-                    if msg.get("role") == "user":
-                        texts = [b.get("text", "") for b in msg.get("content", []) if b.get("type") == "text"]
-                        summary = " ".join(texts).strip()[:80]
-                        if summary:
-                            break
-            sessions.append({
-                "session_id": sid,
-                "summary": summary,
-                "message_count": data.get("message_count", len(data.get("messages", []))),
-                "model": data.get("model", ""),
-                "created_at": data.get("created_at", path.stat().st_mtime),
-            })
-        except (json.JSONDecodeError, OSError):
-            continue
-        if len(sessions) >= limit:
-            break
-
-    # Also include latest.json if it has no corresponding session file
-    latest_path = session_dir / "latest.json"
-    if latest_path.exists() and len(sessions) < limit:
-        try:
-            data = json.loads(latest_path.read_text(encoding="utf-8"))
-            sid = data.get("session_id", "latest")
-            if sid not in seen_ids:
-                summary = data.get("summary", "")
-                if not summary:
-                    for msg in data.get("messages", []):
-                        if msg.get("role") == "user":
-                            texts = [b.get("text", "") for b in msg.get("content", []) if b.get("type") == "text"]
-                            summary = " ".join(texts).strip()[:80]
-                            if summary:
-                                break
-                sessions.append({
-                    "session_id": sid,
-                    "summary": summary or "(latest session)",
-                    "message_count": data.get("message_count", len(data.get("messages", []))),
-                    "model": data.get("model", ""),
-                    "created_at": data.get("created_at", latest_path.stat().st_mtime),
-                })
-        except (json.JSONDecodeError, OSError):
-            pass
-
-    # Sort by created_at descending
-    sessions.sort(key=lambda s: s.get("created_at", 0), reverse=True)
-    return sessions[:limit]
+    repository = _load_session_repository(cwd=cwd)
+    records = repository.list_by_cwd(str(Path(cwd).resolve()))
+    return [_session_summary_from_payload(dict(record.snapshot_json)) for record in records[:limit]]
 
 
 def load_session_by_id(cwd: str | Path, session_id: str) -> dict[str, Any] | None:
     """Load a specific session by ID."""
-    repository = _load_session_repository()
-    if repository is not None:
-        record = repository.get(session_id)
-        if record is not None:
-            return dict(record.snapshot_json)
-    session_dir = get_project_session_dir(cwd)
-    # Try named session first
-    path = session_dir / f"session-{session_id}.json"
-    if path.exists():
-        return json.loads(path.read_text(encoding="utf-8"))
-    # Fallback to latest.json if session_id matches
-    latest = session_dir / "latest.json"
-    if latest.exists():
-        data = json.loads(latest.read_text(encoding="utf-8"))
-        if data.get("session_id") == session_id or session_id == "latest":
-            return data
-    return None
+    repository = _load_session_repository(cwd=cwd)
+    record = repository.get(session_id)
+    if record is None:
+        return None
+    snapshot = dict(record.snapshot_json)
+    if snapshot.get("cwd") and snapshot.get("cwd") != str(Path(cwd).resolve()):
+        return None
+    return snapshot
 
 
 def export_session_markdown(

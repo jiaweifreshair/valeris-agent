@@ -17,6 +17,7 @@ from openharness.config.paths import (
     get_config_dir,
     get_data_dir,
     get_feedback_log_path,
+    get_project_database_path,
     get_project_config_dir,
     get_project_issue_file,
     get_project_pr_comments_file,
@@ -394,21 +395,12 @@ def create_default_command_registry() -> CommandRegistry:
             )
 
         # /resume — list sessions (for the TUI to show a picker)
-        sessions = list_session_snapshots(context.cwd, limit=10)
+        try:
+            sessions = list_session_snapshots(context.cwd, limit=10)
+        except Exception as exc:
+            return CommandResult(message=f"Session storage unavailable: {exc}\nRun: velaris storage init")
         if not sessions:
-            # Fall back to latest.json
-            snapshot = load_session_snapshot(context.cwd)
-            if snapshot is None:
-                return CommandResult(message="No saved sessions found for this project.")
-            messages = [
-                ConversationMessage.model_validate(item)
-                for item in snapshot.get("messages", [])
-            ]
-            context.engine.load_messages(messages)
-            return CommandResult(
-                message=f"Restored {len(messages)} messages from the latest session.",
-                replay_messages=messages,
-            )
+            return CommandResult(message="No saved sessions found for this project.")
 
         # Format session list for display / picker
         import time
@@ -439,45 +431,74 @@ def create_default_command_registry() -> CommandRegistry:
         return CommandResult(message=f"Clipboard unavailable. Saved copied text to {target}")
 
     async def _session_handler(args: str, context: CommandContext) -> CommandResult:
-        session_dir = get_project_session_dir(context.cwd)
         tokens = args.split()
+        session_dir = get_project_session_dir(context.cwd)
+        database_path = get_project_database_path(context.cwd)
+
         if not tokens or tokens[0] == "show":
-            latest = session_dir / "latest.json"
             transcript = session_dir / "transcript.md"
+            latest_session_id = "(none)"
+            try:
+                latest_snapshot = load_session_snapshot(context.cwd)
+            except Exception:
+                latest_snapshot = None
+            if latest_snapshot is not None:
+                latest_session_id = str(latest_snapshot.get("session_id", "(unknown)"))
             lines = [
-                f"Session directory: {session_dir}",
-                f"Latest snapshot: {'present' if latest.exists() else 'missing'}",
+                f"SQLite database: {database_path}",
+                f"Latest session ID: {latest_session_id}",
                 f"Transcript export: {'present' if transcript.exists() else 'missing'}",
                 f"Message count: {len(context.engine.messages)}",
             ]
             return CommandResult(message="\n".join(lines))
         if tokens[0] == "ls":
-            files = sorted(path.name for path in session_dir.iterdir())
-            return CommandResult(message="\n".join(files) if files else "(empty)")
+            from openharness.services.session_storage import list_session_snapshots
+
+            try:
+                sessions = list_session_snapshots(context.cwd, limit=20)
+            except Exception as exc:
+                return CommandResult(message=f"Session storage unavailable: {exc}\nRun: velaris storage init")
+            if not sessions:
+                return CommandResult(message="(empty)")
+
+            import time as _time
+
+            lines = ["Saved sessions:"]
+            for session in sessions:
+                ts = _time.strftime("%m/%d %H:%M", _time.localtime(session.get("created_at", 0)))
+                summary = str(session.get("summary", ""))[:50] or "(no summary)"
+                lines.append(f"  {session['session_id']}  {ts}  {session['message_count']}msg  {summary}")
+            return CommandResult(message="\n".join(lines))
         if tokens[0] == "path":
-            return CommandResult(message=str(session_dir))
+            return CommandResult(message=str(database_path))
         if tokens[0] == "tag" and len(tokens) == 2:
             safe_name = "".join(character for character in tokens[1] if character.isalnum() or character in {"-", "_"})
             if not safe_name:
                 return CommandResult(message="Usage: /session tag NAME")
-            snapshot_path = save_session_snapshot(
+            export_path = export_session_markdown(cwd=context.cwd, messages=context.engine.messages)
+            tagged_md = session_dir / f"{safe_name}.md"
+            shutil.copy2(export_path, tagged_md)
+            session_id = save_session_snapshot(
                 cwd=context.cwd,
                 model=context.app_state.get().model if context.app_state is not None else load_settings().model,
                 system_prompt=build_runtime_system_prompt(load_settings(), cwd=context.cwd),
                 messages=context.engine.messages,
                 usage=context.engine.total_usage,
             )
-            export_path = export_session_markdown(cwd=context.cwd, messages=context.engine.messages)
-            tagged_json = session_dir / f"{safe_name}.json"
-            tagged_md = session_dir / f"{safe_name}.md"
-            shutil.copy2(snapshot_path, tagged_json)
-            shutil.copy2(export_path, tagged_md)
-            return CommandResult(message=f"Tagged session as {safe_name}:\n- {tagged_json}\n- {tagged_md}")
+            return CommandResult(message=f"Tagged session {session_id} as {safe_name}:\n- {tagged_md}")
         if tokens[0] == "clear":
+            from velaris_agent.persistence.sqlite import sqlite_connection
+
+            try:
+                with sqlite_connection(database_path) as connection:
+                    connection.execute("delete from session_records")
+            except Exception as exc:
+                return CommandResult(message=f"Failed to clear session records: {exc}")
+
             if session_dir.exists():
                 shutil.rmtree(session_dir)
             session_dir.mkdir(parents=True, exist_ok=True)
-            return CommandResult(message=f"Cleared session storage at {session_dir}")
+            return CommandResult(message="Cleared session_records and transcript exports.")
         return CommandResult(message="Usage: /session [show|ls|path|tag NAME|clear]")
 
     async def _rewind_handler(args: str, context: CommandContext) -> CommandResult:
