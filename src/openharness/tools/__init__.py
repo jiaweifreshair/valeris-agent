@@ -5,7 +5,9 @@ from openharness.tools.agent_tool import AgentTool
 from openharness.tools.bash_tool import BashTool
 from openharness.tools.base import BaseTool, ToolExecutionContext, ToolRegistry, ToolResult
 from openharness.tools.biz_execute_tool import BizExecuteTool
+from openharness.tools.biz_list_executions_tool import BizListExecutionsTool
 from openharness.tools.biz_plan_tool import BizPlanTool
+from openharness.tools.biz_recall_execution_tool import BizRecallExecutionTool
 from openharness.tools.biz_run_scenario_tool import BizRunScenarioTool
 from openharness.tools.biz_score_tool import BizScoreTool
 from openharness.tools.brief_tool import BriefTool
@@ -80,6 +82,8 @@ def create_default_tool_registry(mcp_manager=None) -> ToolRegistry:
         BashTool(),
         AskUserQuestionTool(),
         BizExecuteTool(),
+        BizListExecutionsTool(),
+        BizRecallExecutionTool(),
         BizPlanTool(),
         BizScoreTool(),
         BizRunScenarioTool(),

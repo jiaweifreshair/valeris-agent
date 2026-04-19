@@ -501,6 +501,43 @@ def create_default_command_registry() -> CommandRegistry:
             return CommandResult(message="Cleared session_records and transcript exports.")
         return CommandResult(message="Usage: /session [show|ls|path|tag NAME|clear]")
 
+    async def _execution_handler(args: str, context: CommandContext) -> CommandResult:
+        """查看或召回 Velaris execution（与 /resume 的 session 恢复显式区分）。"""
+
+        tokens = args.strip().split()
+        action = tokens[0] if tokens else "ls"
+
+        from velaris_agent.velaris.execution_recall import ExecutionRecallService
+
+        service = ExecutionRecallService(cwd=context.cwd)
+
+        if action == "show" and len(tokens) == 2:
+            execution_id = tokens[1].strip()
+            envelope = service.recall_execution(execution_id)
+            if envelope is None:
+                return CommandResult(message=f"Execution not found: {execution_id}")
+            return CommandResult(message=json.dumps(envelope, ensure_ascii=False, indent=2, sort_keys=True))
+
+        limit = 10
+        if action == "ls" and len(tokens) == 2:
+            try:
+                limit = max(1, min(50, int(tokens[1])))
+            except ValueError:
+                return CommandResult(message="Usage: /execution ls [LIMIT]")
+
+        items = service.list_executions(limit=limit)
+        if not items:
+            return CommandResult(message="No executions found for this project.")
+
+        lines = ["Recent executions:"]
+        for item in items:
+            lines.append(
+                f"  {item['execution_id']}  {item['scenario']}  {item['execution_status']}  {item['gate_status']}  {item['audit_status']}"
+            )
+        lines.append("")
+        lines.append("Use /execution show <execution_id> to view the stored envelope.")
+        return CommandResult(message="\n".join(lines))
+
     async def _rewind_handler(args: str, context: CommandContext) -> CommandResult:
         turns = 1
         if args.strip():
@@ -1456,6 +1493,7 @@ def create_default_command_registry() -> CommandRegistry:
     registry.register(SlashCommand("hooks", "Show configured hooks", _hooks_handler))
     registry.register(SlashCommand("resume", "Restore the latest saved session", _resume_handler))
     registry.register(SlashCommand("session", "Inspect the current session storage", _session_handler))
+    registry.register(SlashCommand("execution", "List or inspect Velaris executions", _execution_handler))
     registry.register(SlashCommand("export", "Export the current transcript", _export_handler))
     registry.register(SlashCommand("share", "Create a shareable transcript snapshot", _share_handler))
     registry.register(SlashCommand("copy", "Copy the latest response or provided text", _copy_handler))

@@ -389,6 +389,26 @@ class ExecutionRepository:
             updated_at=str(row[14]),
         )
 
+    def get_snapshot_json(self, execution_id: str) -> dict[str, Any]:
+        """读取 execution 对应的 snapshot_json。
+
+        snapshot_json 作为补充上下文存在，不进入 `BizExecutionRecord` 主实体，
+        以避免把“可选扩展字段”混入核心 contract。
+        """
+
+        with sqlite_connection(self._database_path) as connection:
+            row = connection.execute(
+                """
+                select snapshot_json
+                from execution_records
+                where execution_id = ?
+                """,
+                (execution_id,),
+            ).fetchone()
+        if row is None:
+            return {}
+        return _load_json(row[0])
+
     def list_by_session(self, session_id: str) -> list[BizExecutionRecord]:
         """按 session_id 列出 execution 主记录，供恢复与追踪使用。"""
 

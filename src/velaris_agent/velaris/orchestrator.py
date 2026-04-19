@@ -240,6 +240,7 @@ class VelarisBizOrchestrator:
                         "plan": plan,
                         "routing": routing.to_dict(),
                         "authority": authority.to_dict(),
+                        "gate_decision": gate_decision.to_dict(),
                     },
                 )
             except PreExecutionPersistenceError as exc:
@@ -362,6 +363,8 @@ class VelarisBizOrchestrator:
                         "plan": plan,
                         "routing": routing.to_dict(),
                         "authority": authority.to_dict(),
+                        "gate_decision": gate_decision.to_dict(),
+                        "task_id": task.task_id,
                         "outcome": outcome.to_dict(),
                     },
                     updated_at=failure_execution.updated_at,
@@ -427,6 +430,8 @@ class VelarisBizOrchestrator:
                     "plan": plan,
                     "routing": routing.to_dict(),
                     "authority": authority.to_dict(),
+                    "gate_decision": gate_decision.to_dict(),
+                    "task_id": completed_task.task_id,
                     "result": scenario_result,
                     "outcome": outcome.to_dict(),
                 },
