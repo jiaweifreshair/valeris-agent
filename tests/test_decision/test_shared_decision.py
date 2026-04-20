@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from velaris_agent.decision.shared_decision import (
+from velaris_agent.decision.contracts import (
     BundleCandidate,
     BundleCandidateAggregates,
     BundleDecisionRequest,
     BundleMemberRef,
     CapabilityCandidate,
     CapabilityCandidateSet,
+)
+from velaris_agent.decision.shared_decision import (
     evaluate_bundle_decision,
 )
 

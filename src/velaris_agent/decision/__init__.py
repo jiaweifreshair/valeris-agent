@@ -9,7 +9,7 @@ from velaris_agent.decision.context import (
     DecisionGraphResult,
     OperatorTraceRecord,
 )
-from velaris_agent.decision.shared_decision import (
+from velaris_agent.decision.contracts import (
     BundleCandidate,
     BundleCandidateAggregates,
     BundleDecisionRequest,
@@ -20,6 +20,8 @@ from velaris_agent.decision.shared_decision import (
     RankedBundle,
     RankedCandidate,
     build_bundle_decision_request,
+)
+from velaris_agent.decision.shared_decision import (
     evaluate_bundle_decision,
 )
 
