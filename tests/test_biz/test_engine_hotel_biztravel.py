@@ -27,8 +27,12 @@ def test_build_capability_plan_for_hotel_biztravel_query() -> None:
     assert "candidate_normalize" in plan["capabilities"]
     assert "bundle_planning" in plan["capabilities"]
     assert "joint_ranking" in plan["capabilities"]
+    assert "need_inference" in plan["capabilities"]
+    assert "preference_writeback" in plan["capabilities"]
     assert plan["governance"]["requires_audit"] is True
     assert plan["decision_weights"]["price"] > 0
+    assert "recall_preferences" in plan["recommended_tools"]
+    assert "save_decision" in plan["recommended_tools"]
 
 
 def test_run_hotel_biztravel_domain_rank_returns_structured_decision() -> None:
@@ -60,6 +64,10 @@ def test_run_hotel_biztravel_domain_rank_returns_structured_decision() -> None:
                         "detour_minutes": 6,
                         "inventory_status": "in_stock",
                         "available": True,
+                        "metadata": {
+                            "store_name": "机场店",
+                            "flower_style": "体面送礼",
+                        },
                         "domain_features": {"style_match": 0.90},
                         "score_features": {
                             "preference_match": 0.92,
@@ -100,9 +108,94 @@ def test_run_hotel_biztravel_domain_rank_returns_structured_decision() -> None:
         "flower-1",
         "flower-2",
     ]
+    assert result["candidate_briefs"][0]["store_name"] == "机场店"
+    assert result["inferred_user_needs"][0]["need_type"] == "flower_quantity"
+    assert result["writeback_hints"]["preference_tool"] == "save_decision"
     assert result["hard_constraint_report"]["passed"] is True
     assert result["why_selected"]
     assert result["explanation_text"]
+
+
+def test_run_hotel_biztravel_domain_rank_infers_coffee_need() -> None:
+    """咖啡同类排序应输出店铺摘要与咖啡类型推断。"""
+
+    result = run_scenario(
+        scenario="hotel_biztravel",
+        payload={
+            "decision_type": "domain_rank",
+            "candidate_set": {
+                "domain": "food",
+                "service_type": "coffee",
+                "request_context": {
+                    "session_id": "session-hotel-coffee",
+                    "query": "会议前提神，帮我顺路找一家咖啡店。",
+                },
+                "hard_constraints": {
+                    "budget_max": 60,
+                    "max_detour_minutes": 15,
+                },
+                "candidates": [
+                    {
+                        "id": "coffee-1",
+                        "domain": "food",
+                        "service_type": "coffee",
+                        "title": "写字楼咖啡店",
+                        "price": 28,
+                        "eta_minutes": 12,
+                        "detour_minutes": 5,
+                        "inventory_status": "in_stock",
+                        "available": True,
+                        "tags": ["提神", "顺路"],
+                        "metadata": {
+                            "store_name": "写字楼咖啡",
+                            "coffee_type": "热美式",
+                        },
+                        "domain_features": {"taste_match": 0.8},
+                        "score_features": {
+                            "preference_match": 0.89,
+                            "experience_value": 0.76,
+                        },
+                    },
+                    {
+                        "id": "coffee-2",
+                        "domain": "food",
+                        "service_type": "coffee",
+                        "title": "商场咖啡店",
+                        "price": 32,
+                        "eta_minutes": 18,
+                        "detour_minutes": 10,
+                        "inventory_status": "in_stock",
+                        "available": True,
+                        "tags": ["拿铁"],
+                        "metadata": {
+                            "store_name": "商场咖啡",
+                            "coffee_type": "拿铁",
+                        },
+                        "domain_features": {"taste_match": 0.73},
+                        "score_features": {
+                            "preference_match": 0.74,
+                            "experience_value": 0.69,
+                        },
+                    },
+                ],
+            },
+            "decision_weights": {
+                "price": 0.2,
+                "eta": 0.25,
+                "detour": 0.2,
+                "preference_match": 0.25,
+                "experience_value": 0.1,
+            },
+        },
+    )
+
+    assert result["decision_type"] == "domain_rank"
+    assert result["candidate_briefs"][0]["store_name"] == "写字楼咖啡"
+    assert "适合赶时间" in result["candidate_briefs"][0]["highlights"]
+    coffee_need = next(item for item in result["inferred_user_needs"] if item["need_type"] == "coffee_type")
+    assert coffee_need["value"] == "美式"
+    assert coffee_need["needs_confirmation"] is True
+    assert result["writeback_hints"]["knowledge_policy"] == "explicit-only"
 
 
 def test_run_hotel_biztravel_bundle_rank_returns_structured_decision() -> None:
@@ -112,6 +205,96 @@ def test_run_hotel_biztravel_bundle_rank_returns_structured_decision() -> None:
         scenario="hotel_biztravel",
         payload={
             "decision_type": "bundle_rank",
+            "candidate_set": {
+                "domain": "travel",
+                "service_type": "hotel",
+                "request_context": {
+                    "session_id": "session-hotel-bundle",
+                    "query": "帮我把酒店、咖啡和接送排成一个 bundle",
+                },
+                "hard_constraints": {
+                    "budget_max": 360,
+                    "max_detour_minutes": 15,
+                },
+                "candidates": [
+                    {
+                        "id": "travel-1",
+                        "domain": "travel",
+                        "service_type": "hotel",
+                        "title": "商务酒店 A",
+                        "price": 231,
+                        "eta_minutes": 18,
+                        "detour_minutes": 4,
+                        "inventory_status": "in_stock",
+                        "available": True,
+                        "metadata": {
+                            "store_name": "商务酒店 A",
+                        },
+                        "domain_features": {"comfort": 0.88},
+                        "score_features": {
+                            "preference_match": 0.9,
+                            "experience_value": 0.84,
+                        },
+                    },
+                    {
+                        "id": "coffee-1",
+                        "domain": "food",
+                        "service_type": "coffee",
+                        "title": "写字楼咖啡店",
+                        "price": 28,
+                        "eta_minutes": 12,
+                        "detour_minutes": 5,
+                        "inventory_status": "in_stock",
+                        "available": True,
+                        "metadata": {
+                            "store_name": "写字楼咖啡",
+                        },
+                        "domain_features": {"taste_match": 0.8},
+                        "score_features": {
+                            "preference_match": 0.89,
+                            "experience_value": 0.76,
+                        },
+                    },
+                    {
+                        "id": "travel-2",
+                        "domain": "travel",
+                        "service_type": "hotel",
+                        "title": "转机酒店 B",
+                        "price": 180,
+                        "eta_minutes": 26,
+                        "detour_minutes": 8,
+                        "inventory_status": "in_stock",
+                        "available": True,
+                        "metadata": {
+                            "store_name": "转机酒店 B",
+                        },
+                        "domain_features": {"comfort": 0.74},
+                        "score_features": {
+                            "preference_match": 0.66,
+                            "experience_value": 0.62,
+                        },
+                    },
+                    {
+                        "id": "coffee-2",
+                        "domain": "food",
+                        "service_type": "coffee",
+                        "title": "商场咖啡店",
+                        "price": 32,
+                        "eta_minutes": 18,
+                        "detour_minutes": 10,
+                        "inventory_status": "in_stock",
+                        "available": True,
+                        "metadata": {
+                            "store_name": "商场咖啡",
+                        },
+                        "domain_features": {"taste_match": 0.73},
+                        "score_features": {
+                            "preference_match": 0.74,
+                            "experience_value": 0.69,
+                        },
+                    },
+                ],
+            },
             "request_context": {
                 "session_id": "session-hotel-bundle",
                 "query": "帮我把酒店、咖啡和接送排成一个 bundle",
@@ -148,6 +331,10 @@ def test_run_hotel_biztravel_bundle_rank_returns_structured_decision() -> None:
                         "passed": True,
                         "checks": ["不误机", "都在营业时间内"],
                     },
+                    "metadata": {
+                        "flight_number": "CA1234",
+                        "aircraft_model": "A320",
+                    },
                 },
                 {
                     "bundle_id": "bundle-2",
@@ -175,6 +362,10 @@ def test_run_hotel_biztravel_bundle_rank_returns_structured_decision() -> None:
                     "hard_constraint_report": {
                         "passed": True,
                         "checks": ["不误机"],
+                    },
+                    "metadata": {
+                        "flight_number": "MU9988",
+                        "aircraft_model": "B787",
                     },
                 },
                 {
@@ -222,8 +413,14 @@ def test_run_hotel_biztravel_bundle_rank_returns_structured_decision() -> None:
         "bundle-1",
         "bundle-2",
     ]
+    assert result["bundle_briefs"][0]["selected"] is True
+    assert result["bundle_briefs"][0]["aggregates"]["time_slack_minutes"] == 28
+    assert result["bundle_briefs"][0]["members"][0]["store_name"] == "商务酒店 A"
+    aircraft_need = next(item for item in result["inferred_user_needs"] if item["need_type"] == "aircraft_model")
+    assert aircraft_need["value"] == "A320"
     assert result["hard_constraint_report"]["passed"] is True
     assert result["hard_constraint_report"]["rejected_bundle_ids"] == ["bundle-3"]
     assert result["why_selected"]
     assert result["tradeoffs"]
+    assert result["writeback_hints"]["preference_tool"] == "save_decision"
     assert result["decision_trace_id"].startswith("hotel-biztravel-")

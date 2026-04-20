@@ -19,6 +19,7 @@ from velaris_agent.decision.shared_decision import (
     build_bundle_decision_request,
     evaluate_bundle_decision,
 )
+from velaris_agent.biz.hotel_biztravel_inference import enrich_hotel_biztravel_response
 from velaris_agent.memory.conflict_engine import ConflictDetectionEngine
 from velaris_agent.memory.negotiation import NegotiationStrategy
 from velaris_agent.memory.types import (
@@ -71,6 +72,8 @@ _SCENARIO_CAPABILITIES: dict[str, list[str]] = {
         "bundle_planning",
         "feasibility_filter",
         "joint_ranking",
+        "need_inference",
+        "preference_writeback",
         "decision_explanation",
         "memory_recall",
     ],
@@ -133,7 +136,15 @@ _SCENARIO_RECOMMENDED_TOOLS: dict[str, list[str]] = {
         "save_decision", "decision_score", "biz_execute",
     ],
     "travel": ["biz_execute", "travel_recommend", "travel_compare", "biz_plan", "biz_score"],
-    "hotel_biztravel": ["biz_execute", "decision_score", "biz_plan", "biz_score"],
+    "hotel_biztravel": [
+        "recall_preferences",
+        "recall_decisions",
+        "biz_execute",
+        "decision_score",
+        "save_decision",
+        "biz_plan",
+        "biz_score",
+    ],
     "tokencost": ["biz_execute", "tokencost_analyze", "biz_plan", "biz_score"],
     "robotclaw": ["biz_execute", "robotclaw_dispatch", "biz_plan", "biz_score"],
     "procurement": ["biz_execute", "biz_run_scenario", "biz_plan", "biz_score"],
@@ -809,7 +820,8 @@ def _run_hotel_biztravel_scenario(payload: dict[str, Any]) -> dict[str, Any]:
 
     request = build_bundle_decision_request(payload)
     response: BundleDecisionResponse = evaluate_bundle_decision(request)
-    return response.model_dump(mode="json")
+    enriched = enrich_hotel_biztravel_response(request=request, response=response)
+    return enriched.model_dump(mode="json")
 
 
 def _build_procurement_option_from_graph(
@@ -1053,25 +1065,37 @@ def _looks_like_hotel_biztravel_query(query: str) -> bool:
     所以只在明确出现礼宾、鲜花、咖啡、接送、联合决策等组合信号时才命中。
     """
 
+    # 这一组信号只回答“用户是不是在要联合决策 / 组合方案”，
+    # 例如 bundle、联合决策、组合、礼宾等；它不负责判断业务域。
     bundle_signals = (
         "鲜花",
         "花束",
+        "花店",
         "咖啡",
+        "咖啡店",
         "接送",
         "礼宾",
         "餐厅",
+        "多店",
+        "门店",
+        "伴手礼",
         "bundle",
         "组合方案",
         "联合决策",
         "行程套餐",
         "附加服务",
     )
+    # 这一组信号只回答“问题是不是落在酒店 / 商旅 / 出行域”，
+    # 例如酒店、商旅、差旅、机场、航班等；它不负责判断是否需要 bundle。
     travel_anchor = (
         "酒店",
         "商旅",
         "差旅",
         "出差",
         "机场",
+        "送机",
+        "接机",
+        "候机",
         "航班",
         "行程",
         "旅程",
@@ -1079,6 +1103,10 @@ def _looks_like_hotel_biztravel_query(query: str) -> bool:
 
     if "hotel_biztravel" in query or "bundle_rank" in query:
         return True
+    # 两类信号必须同时出现：
+    # - bundle_signals 负责发现“需要共享决策”
+    # - travel_anchor 负责确认“这是酒店 / 商旅问题”
+    # 这样可以减少把普通旅游问句误送进 bundle 路径的概率。
     if any(signal in query for signal in bundle_signals) and any(anchor in query for anchor in travel_anchor):
         return True
     return False

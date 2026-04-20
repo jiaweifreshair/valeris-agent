@@ -234,6 +234,22 @@ class BundleDecisionResponse(BaseModel):
         default_factory=list,
         description="bundle 排序结果",
     )
+    candidate_briefs: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="面向前端展示的同类候选摘要",
+    )
+    bundle_briefs: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="面向前端展示的 bundle 摘要",
+    )
+    inferred_user_needs: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="根据 query 与候选信息推断出的用户需求假设",
+    )
+    writeback_hints: dict[str, Any] = Field(
+        default_factory=dict,
+        description="偏好回写与知识库写入边界提示",
+    )
     score_breakdown: dict[str, float] = Field(
         default_factory=dict,
         description="被选中项的评分拆解",
