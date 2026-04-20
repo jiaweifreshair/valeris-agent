@@ -251,6 +251,9 @@ uv sync --extra dev
 - `velaris` / `vl`：Velaris Agent 官方入口，品牌保持不变
 - `oh` / `openharness`：OpenHarness 兼容入口，便于迁移已有脚本与习惯
 
+- 默认交互入口是 React 终端 UI；`velaris` 首次启动时如果 `frontend/terminal` 下还没有前端依赖，会自动执行 `npm install`。
+- 如果你只想单独开发前端，进入 `frontend/terminal` 后运行 `npm start` 即可。
+
 ### 如何运行项目
 
 #### 1. 运行本地人生目标 Demo
