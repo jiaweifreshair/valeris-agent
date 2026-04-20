@@ -319,6 +319,11 @@ uv run velaris auth login moonshot --api-key sk-your-key
 # 配置鉴权：仅使用环境变量，不落盘
 uv run velaris auth login moonshot --use-env
 
+# 如果你已经执行过 `codex login`，OpenAI provider 也可以直接复用
+# `~/.codex/auth.json` 中的 OPENAI_API_KEY（只读回退，不写入 Velaris 配置）
+uv run velaris auth switch openai
+uv run velaris auth status
+
 # 一次性完成 provider + model + 鉴权方式初始化
 uv run velaris setup moonshot --model kimi-k2 --use-env
 
@@ -356,6 +361,13 @@ export VELARIS_BASE_URL=https://api.moonshot.ai/v1
 ```
 
 > 说明：`VELARIS_*` 与 `OPENHARNESS_*` 环境变量前缀都可用，用于兼容 OpenHarness 组件迁移；对外品牌与默认入口仍然是 Velaris。
+>
+> 补充：当当前 provider 为 `openai` 且没有显式 `api_key`、没有命中环境变量时，
+> Velaris 会只读回退到 `~/.codex/auth.json` 中的 `OPENAI_API_KEY`。
+> 可以先执行 `codex login`，再通过 `uv run velaris auth status` 确认来源是否显示为
+> `codex:~/.codex/auth.json#OPENAI_API_KEY`。
+> 这条回退目前只对 `openai` provider 生效，不会自动把 Codex 的 OpenAI key 复用到
+> `moonshot`、`dashscope`、`gemini` 等 vendor-specific OpenAI-compatible provider。
 
 ### 如何运行测试
 

@@ -175,6 +175,36 @@ def test_cli_auth_status_reports_provider_specific_env_source(tmp_path, monkeypa
     assert "- auth_source: env:MOONSHOT_API_KEY" in result.output
 
 
+def test_cli_auth_status_reports_codex_auth_source(tmp_path, monkeypatch):
+    """auth status 应展示来自 Codex auth 文件的来源。"""
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("OPENHARNESS_CONFIG_DIR", str(tmp_path / "config"))
+    codex_dir = tmp_path / ".codex"
+    codex_dir.mkdir()
+    (codex_dir / "auth.json").write_text(
+        json.dumps(
+            {
+                "OPENAI_API_KEY": "sk-codex-secret",
+                "auth_mode": "apikey",
+                "tokens": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    from openharness.config import Settings, save_settings
+
+    save_settings(Settings(provider="openai", api_format="openai_compat", model="gpt-5"))
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["auth", "status"])
+
+    assert result.exit_code == 0
+    assert "Auth status:" in result.output
+    assert "- provider: openai" in result.output
+    assert "- auth_source: codex:~/.codex/auth.json#OPENAI_API_KEY" in result.output
+
+
 def test_cli_auth_logout_clears_key_for_active_provider(tmp_path, monkeypatch):
     """auth logout 应清空当前 provider 的本地持久化 key。"""
 

@@ -16,7 +16,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from openharness.api.registry import infer_provider_spec, resolve_api_key_from_env
+from openharness.api.registry import infer_provider_spec, resolve_api_key, resolve_api_key_from_env
 from openharness.hooks.schemas import HookDefinition
 from openharness.mcp.types import McpServerConfig
 from openharness.permissions.modes import PermissionMode
@@ -127,20 +127,20 @@ class Settings(BaseModel):
         if self.api_key:
             return self.api_key
 
-        env_key = resolve_api_key_from_env(
+        resolved_key = resolve_api_key(
             provider_name=self.provider,
             model=self.model,
             base_url=self.base_url,
             api_key=self.api_key,
             api_format=self.api_format,
         )
-        if env_key:
-            return env_key
+        if resolved_key:
+            return resolved_key
 
         raise ValueError(
             "No API key found. Set VELARIS_API_KEY, provider-specific API key "
             "(for example ANTHROPIC_API_KEY / OPENAI_API_KEY / MOONSHOT_API_KEY), "
-            "or configure api_key in ~/.velaris-agent/settings.json"
+            "or rely on ~/.codex/auth.json, or configure api_key in ~/.velaris-agent/settings.json"
         )
 
     def merge_cli_overrides(self, **overrides: Any) -> Settings:

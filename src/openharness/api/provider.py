@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from openharness.api.registry import (
     infer_provider_spec,
-    resolve_api_key_source_from_env,
+    resolve_api_key_source,
 )
 from openharness.config.settings import Settings
 
@@ -75,17 +75,17 @@ def resolve_auth_status(settings: Settings) -> AuthStatusInfo:
         api_key=settings.api_key,
         api_format=settings.api_format,
     )
-    env_name, env_value = resolve_api_key_source_from_env(
+    credential_source, credential_value = resolve_api_key_source(
         provider_name=settings.provider,
         model=settings.model,
         base_url=settings.base_url,
         api_key=settings.api_key,
         api_format=settings.api_format,
     )
-    if env_value:
+    if credential_value:
         return AuthStatusInfo(
             status="configured",
-            source=f"env:{env_name}",
+            source=credential_source,
             credential_env=spec.env_key,
         )
 

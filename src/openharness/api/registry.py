@@ -6,8 +6,10 @@
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -209,6 +211,135 @@ def resolve_api_key_from_env(
         api_format=api_format,
     )
     return env_value
+
+
+def _should_use_codex_openai_key(spec: ProviderSpec) -> bool:
+    """判断当前 provider 是否允许回退到 Codex 的 OpenAI key。
+
+    目前只对真正的 OpenAI provider 生效，避免把 Codex 登录产生的
+    `OPENAI_API_KEY` 误用到 Moonshot / DashScope 等 vendor-specific 网关。
+    """
+
+    return spec.name == "openai"
+
+
+def _get_codex_auth_file_path() -> Path:
+    """返回 Codex 鉴权文件路径。
+
+    优先读取 `CODEX_HOME`，否则退回到默认的 `~/.codex/auth.json`。
+    """
+
+    codex_home = os.environ.get("CODEX_HOME")
+    if codex_home:
+        return Path(codex_home).expanduser() / "auth.json"
+    return Path.home() / ".codex" / "auth.json"
+
+
+def _render_home_relative_path(path: Path) -> str:
+    """把路径渲染为尽量稳定的人类可读格式。"""
+
+    home = Path.home()
+    try:
+        relative = path.relative_to(home)
+    except ValueError:
+        return path.as_posix()
+    return f"~/{relative.as_posix()}"
+
+
+def resolve_api_key_source_from_codex(
+    *,
+    provider_name: str | None = None,
+    model: str | None = None,
+    base_url: str | None = None,
+    api_key: str | None = None,
+    api_format: str | None = None,
+) -> tuple[str, str]:
+    """按 provider 语义从 Codex auth 文件读取可复用的 API key。
+
+    这是一个只读回退路径：只有在当前 provider 可以安全复用 Codex 的
+    `OPENAI_API_KEY` 时才会尝试读取，并且任何文件缺失/格式异常都会静默跳过。
+    """
+
+    spec = infer_provider_spec(
+        provider_name=provider_name,
+        model=model,
+        base_url=base_url,
+        api_key=api_key,
+        api_format=api_format,
+    )
+    if not _should_use_codex_openai_key(spec):
+        return "", ""
+
+    auth_path = _get_codex_auth_file_path()
+    try:
+        payload = json.loads(auth_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError, json.JSONDecodeError):
+        return "", ""
+    if not isinstance(payload, dict):
+        return "", ""
+
+    candidate = payload.get("OPENAI_API_KEY")
+    if not isinstance(candidate, str) or not candidate:
+        return "", ""
+
+    return f"codex:{_render_home_relative_path(auth_path)}#OPENAI_API_KEY", candidate
+
+
+def resolve_api_key(
+    *,
+    provider_name: str | None = None,
+    model: str | None = None,
+    base_url: str | None = None,
+    api_key: str | None = None,
+    api_format: str | None = None,
+) -> str:
+    """按统一优先级解析可直接使用的 API key。
+
+    当前顺序为：环境变量 → Codex auth 文件 → 空字符串。
+    `settings.api_key` 的优先级仍由调用方自行决定。
+    """
+
+    _source, value = resolve_api_key_source(
+        provider_name=provider_name,
+        model=model,
+        base_url=base_url,
+        api_key=api_key,
+        api_format=api_format,
+    )
+    return value
+
+
+def resolve_api_key_source(
+    *,
+    provider_name: str | None = None,
+    model: str | None = None,
+    base_url: str | None = None,
+    api_key: str | None = None,
+    api_format: str | None = None,
+) -> tuple[str, str]:
+    """按统一优先级返回命中的凭据来源和值。"""
+
+    env_name, env_value = resolve_api_key_source_from_env(
+        provider_name=provider_name,
+        model=model,
+        base_url=base_url,
+        api_key=api_key,
+        api_format=api_format,
+    )
+    if env_value:
+        return f"env:{env_name}", env_value
+
+    codex_source, codex_value = resolve_api_key_source_from_codex(
+        provider_name=provider_name,
+        model=model,
+        base_url=base_url,
+        api_key=api_key,
+        api_format=api_format,
+    )
+    if codex_value:
+        return codex_source, codex_value
+
+    return "", ""
 
 
 def resolve_api_key_source_from_env(
