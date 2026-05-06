@@ -66,6 +66,8 @@ class SqliteDecisionMemory(DecisionMemory):
 
         self._database_path = str(database_path)
         self._base_dir = Path(base_dir) if base_dir is not None else None
+        # 父类 DecisionMemory.recall_similar 依赖此属性
+        self._semantic_engine = None
 
     def save(self, record: DecisionRecord) -> str:
         """把决策记录写入 SQLite，并返回决策 ID。"""

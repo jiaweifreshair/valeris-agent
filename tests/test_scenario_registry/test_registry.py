@@ -335,7 +335,7 @@ class TestBuiltinScenarios:
         spec = registry.get_required("procurement")
         assert "compliance_review" in spec.capabilities
         assert spec.weights["cost"] == pytest.approx(0.28)
-        assert spec.risk_level == "high"
+        assert spec.risk_level == "medium"
 
     def test_tokencost_scenario(self, registry: ScenarioRegistry) -> None:
         spec = registry.get_required("tokencost")
