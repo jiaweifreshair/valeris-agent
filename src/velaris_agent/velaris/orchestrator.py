@@ -31,6 +31,8 @@ from velaris_agent.velaris.persistence_barrier import (
     PreExecutionPersistenceBarrier,
     PreExecutionPersistenceError,
 )
+from velaris_agent.velaris.cost_tracker import DecisionCostTracker
+from velaris_agent.velaris.dynamic_router import DynamicRouter, RoutingContext
 from velaris_agent.velaris.router import PolicyRouter
 from velaris_agent.velaris.task_ledger import TaskLedger
 
@@ -67,6 +69,8 @@ class VelarisBizOrchestrator:
         persistence_barrier: PreExecutionPersistenceBarrier | None = None,
         failure_classifier: PersistenceFailureClassifier | None = None,
         openviking_context: Any | None = None,
+        dynamic_router: DynamicRouter | None = None,
+        cost_tracker: DecisionCostTracker | None = None,
         cwd: str | Path | None = None,
         sqlite_database_path: str | Path | None = None,
     ) -> None:
@@ -110,6 +114,10 @@ class VelarisBizOrchestrator:
             )
         # OpenViking 上下文管理器（可选增强，不影响现有 SQLite 主线）
         self.openviking_context = openviking_context
+        # DynamicRouter 动态路由器（可选增强，不提供时使用 PolicyRouter）
+        self.dynamic_router = dynamic_router
+        # DecisionCostTracker 决策成本追踪器（可选增强）
+        self.cost_tracker = cost_tracker
 
     def execute_request(self, request: DecisionExecutionRequest) -> dict[str, Any]:
         """标准化 request 入口：OpenHarness 只负责提交请求并接收统一执行包络。"""
@@ -153,6 +161,14 @@ class VelarisBizOrchestrator:
         if "decision_weights" not in scenario_payload and "decision_weights" in plan:
             scenario_payload["decision_weights"] = plan["decision_weights"]
         routing = self.router.route(plan=plan, query=query)
+
+        # DynamicRouter 增强路由（可选，提供 cost/SLA/compliance 感知）
+        dynamic_decision = None
+        if self.dynamic_router is not None:
+            dynamic_decision = self.dynamic_router.route(
+                plan=plan, query=query, context=None,
+            )
+
         authority = self.authority_service.issue_plan(
             required_capabilities=routing.required_capabilities,
             governance=plan["governance"],
@@ -317,6 +333,14 @@ class VelarisBizOrchestrator:
                 required=False,
             )
             scenario_result = run_scenario(plan["scenario"], scenario_payload)
+
+            # DecisionCostTracker 记录成功执行的成本（可选增强）
+            self._track_execution_cost(
+                execution_id=execution.execution_id,
+                scenario=str(plan["scenario"]),
+                model_tier=dynamic_decision.model_tier.value if dynamic_decision else "standard",
+            )
+
             audit_event_count += self._append_audit_event(
                 session_id=resolved_session_id,
                 step_name="orchestrator.completed",
@@ -753,6 +777,44 @@ class VelarisBizOrchestrator:
                 f"OpenViking 快照持久化失败 (execution_id={execution_id}): {exc}"
             )
             return None
+
+    def _track_execution_cost(
+        self,
+        execution_id: str,
+        scenario: str,
+        model_tier: str = "standard",
+        token_input: int = 0,
+        token_output: int = 0,
+        latency_ms: float = 0.0,
+    ) -> None:
+        """记录执行成本到 DecisionCostTracker（可选增强）。
+
+        此方法不会影响主流程——即使 CostTracker 未配置，
+        也不会抛出异常或改变执行语义。
+
+        Args:
+            execution_id: 执行 ID
+            scenario: 场景名
+            model_tier: 模型等级
+            token_input: 输入 token 数（估算）
+            token_output: 输出 token 数（估算）
+            latency_ms: 执行延迟（毫秒）
+        """
+        if self.cost_tracker is None:
+            return
+
+        try:
+            self.cost_tracker.track(
+                execution_id=execution_id,
+                scenario=scenario,
+                model_tier=model_tier,
+                token_input=token_input,
+                token_output=token_output,
+                latency_ms=latency_ms,
+            )
+        except Exception:
+            # CostTracker 是增强能力，不能反向污染主业务
+            pass
 
 
 def _resolve_stakeholder_map(
