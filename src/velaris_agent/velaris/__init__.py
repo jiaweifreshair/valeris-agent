@@ -8,6 +8,8 @@ from importlib import import_module
 
 __all__ = [
     "AuthorityService",
+    "DecisionCostTracker",
+    "DynamicRouter",
     "OutcomeStore",
     "PolicyRouter",
     "TaskLedger",
@@ -22,6 +24,14 @@ def __getattr__(name: str):
         from velaris_agent.velaris.authority import AuthorityService
 
         return AuthorityService
+    if name == "DecisionCostTracker":
+        from velaris_agent.velaris.cost_tracker import DecisionCostTracker
+
+        return DecisionCostTracker
+    if name == "DynamicRouter":
+        from velaris_agent.velaris.dynamic_router import DynamicRouter
+
+        return DynamicRouter
     if name == "OutcomeStore":
         from velaris_agent.velaris.outcome_store import OutcomeStore
 
