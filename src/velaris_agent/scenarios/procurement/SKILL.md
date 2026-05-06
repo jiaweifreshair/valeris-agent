@@ -1,6 +1,8 @@
 ---
 name: procurement
 version: "1.0"
+entry_point: "velaris_agent.biz.engine:_run_procurement_scenario"
+fallback_scenario: general
 keywords:
   - procurement
   - supplier
