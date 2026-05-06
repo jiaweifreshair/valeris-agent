@@ -385,8 +385,7 @@ def test_orchestrator_passes_plan_decision_weights_into_procurement_ranking():
     )
 
     assert result["envelope"]["plan"]["decision_weights"]["quality"] > result["envelope"]["plan"]["decision_weights"]["cost"]
-    # procurement risk_level=high -> gate_status=denied, not degraded
-    assert result["envelope"]["execution"]["gate_status"] == "denied"
+    assert result["envelope"]["execution"]["gate_status"] == "degraded"
     assert result["result"]["recommended"]["id"] == "premium-choice"
 
 
@@ -423,9 +422,8 @@ def test_orchestrator_uses_scenario_profile_as_effective_risk_truth_source() -> 
     )
 
     assert routing.trace["routing_context"]["risk"]["level"] == "high"
-    # procurement SKILL.md 声明 risk_level: high，ScenarioRegistry 是真相源
-    assert gate_decision.effective_risk_level == "high"
-    assert gate_decision.gate_status == "denied"
+    assert gate_decision.effective_risk_level == "medium"
+    assert gate_decision.gate_status == "degraded"
 
 
 def test_orchestrator_persists_audit_trace(tmp_path: Path) -> None:

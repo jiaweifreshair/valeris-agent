@@ -578,13 +578,13 @@ class VelarisBizOrchestrator:
             return explicit_risk_level
 
         # 从 ScenarioRegistry 读取场景风险等级（替代硬编码字典）
+        # 只要场景在注册表中注册，就直接使用其 risk_level，不再回退到 routing
         scenario = str(plan.get("scenario", "general") or "general")
         from velaris_agent.biz.engine import get_scenario_registry
         registry = get_scenario_registry()
-        scenario_risk = registry.get_risk_level(scenario)
-        if scenario_risk and scenario_risk != "medium":
-            # 只有 low 或 high 需要覆盖默认值
-            return scenario_risk
+        spec = registry.get(scenario)
+        if spec is not None:
+            return spec.risk_level
 
         base_risk_level = (
             routing.get("trace", {})
